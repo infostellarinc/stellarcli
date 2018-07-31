@@ -17,9 +17,7 @@ package cmd
 import (
 	"log"
 	"os"
-	"os/signal"
 	"strconv"
-	"sync"
 
 	"github.com/spf13/cobra"
 
@@ -53,20 +51,10 @@ the satellite and any incoming packets will be returned as is.
 		}
 
 		c := make(chan os.Signal)
-		signal.Notify(c, os.Interrupt)
-		go func() {
-			for {
-				<-c
-				p.Close()
-				os.Exit(0)
-			}
-		}()
 
 		p.Start()
-
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		wg.Wait()
+		<-c
+		p.Close()
 	},
 }
 
