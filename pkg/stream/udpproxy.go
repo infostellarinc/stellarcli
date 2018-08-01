@@ -84,6 +84,7 @@ func (p *udpProxy) Start() error {
 		return err
 	}
 
+	p.closeWg.Add(2)
 	go p.sendLoop()
 	go p.recvLoop()
 
@@ -106,7 +107,6 @@ func (p *udpProxy) Close() error {
 }
 
 func (p *udpProxy) recvLoop() {
-	p.closeWg.Add(1)
 	defer p.closeWg.Done()
 	for {
 		select {
@@ -127,7 +127,6 @@ func (p *udpProxy) recvLoop() {
 }
 
 func (p *udpProxy) sendLoop() {
-	p.closeWg.Add(1)
 	defer p.closeWg.Done()
 	for {
 		select {
