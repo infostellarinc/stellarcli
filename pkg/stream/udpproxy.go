@@ -56,7 +56,7 @@ func StartUDPProxy(recvAddr string, sendAddr string, satelliteId string) (UDPPro
 
 	sendChan := make(chan []byte)
 
-	stream, err := NewSatelliteStream(satelliteId, sendChan)
+	stream, err := OpenSatelliteStream(satelliteId, sendChan)
 	if err != nil {
 		rc.Close()
 		sc.Close()
@@ -74,12 +74,7 @@ func StartUDPProxy(recvAddr string, sendAddr string, satelliteId string) (UDPPro
 		closeWg:       sync.WaitGroup{},
 	}
 
-	err = p.start()
-	if err != nil {
-		rc.Close()
-		sc.Close()
-		return nil, err
-	}
+	p.start()
 
 	return p, nil
 }
@@ -131,15 +126,8 @@ func (p *udpProxy) sendLoop() {
 	}
 }
 
-func (p *udpProxy) start() error {
-	err := p.stream.Start()
-	if err != nil {
-		return err
-	}
-
+func (p *udpProxy) start() {
 	p.closeWg.Add(2)
 	go p.sendLoop()
 	go p.recvLoop()
-
-	return nil
 }

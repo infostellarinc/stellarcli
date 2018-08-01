@@ -32,7 +32,6 @@ const (
 )
 
 type SatelliteStream interface {
-	Start() error
 	Send(payload []byte) error
 
 	io.Closer
@@ -50,8 +49,8 @@ type satelliteStream struct {
 	state uint32
 }
 
-// NewSatelliteStream opens a stream to a satellite over the StellarStation API.
-func NewSatelliteStream(satelliteId string, recvChan chan []byte) (SatelliteStream, error) {
+// OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
+func OpenSatelliteStream(satelliteId string, recvChan chan []byte) (SatelliteStream, error) {
 	s := &satelliteStream{
 		satelliteId:        satelliteId,
 		streamId:           "",
@@ -60,18 +59,9 @@ func NewSatelliteStream(satelliteId string, recvChan chan []byte) (SatelliteStre
 		recvLoopClosedChan: make(chan struct{}),
 	}
 
+	s.start()
+
 	return s, nil
-}
-
-// Start starts listening for data from the satellite.
-func (ss *satelliteStream) Start() error {
-	err := ss.openStream()
-	if err != nil {
-		return err
-	}
-	go ss.recvLoop()
-
-	return nil
 }
 
 // Send sends a packet to the satellite.
@@ -154,5 +144,15 @@ func (ss *satelliteStream) openStream() error {
 
 	ss.conn = conn
 	ss.stream = stream
+	return nil
+}
+
+func (ss *satelliteStream) start() error {
+	err := ss.openStream()
+	if err != nil {
+		return err
+	}
+	go ss.recvLoop()
+
 	return nil
 }
