@@ -23,7 +23,7 @@ import (
 )
 
 type UDPProxy interface {
-	Start()
+	Start() error
 	io.Closer
 }
 
@@ -33,10 +33,12 @@ type udpProxy struct {
 	stream   SatelliteStream
 
 	recvBuf       []byte
-	recvCloseChan chan *sync.WaitGroup
+	recvCloseChan chan struct{}
 
 	sendChan      chan []byte
-	sendCloseChan chan *sync.WaitGroup
+	sendCloseChan chan struct{}
+
+	closeWg sync.WaitGroup
 }
 
 // NewUDPProxy creates a UDPProxy that will listen for packets to send to the satellite and send back
@@ -68,31 +70,34 @@ func NewUDPProxy(recvAddr string, sendAddr string, satelliteId string) (UDPProxy
 		stream:        stream,
 		sendChan:      sendChan,
 		recvBuf:       make([]byte, 1024*1024),
-		sendCloseChan: make(chan *sync.WaitGroup),
-		recvCloseChan: make(chan *sync.WaitGroup),
+		sendCloseChan: make(chan struct{}),
+		recvCloseChan: make(chan struct{}),
+		closeWg:       sync.WaitGroup{},
 	}
 	return p, nil
 }
 
 // Start starts the proxy, listening for packets to send to/from the satellite.
-func (p *udpProxy) Start() {
-	p.stream.Start()
+func (p *udpProxy) Start() error {
+	err := p.stream.Start()
+	if err != nil {
+		return err
+	}
 
 	go p.sendLoop()
 	go p.recvLoop()
+
+	return nil
 }
 
 // Close closes the proxy.
 func (p *udpProxy) Close() error {
 	p.stream.Close()
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
+	close(p.recvCloseChan)
+	close(p.sendCloseChan)
 
-	p.recvCloseChan <- &wg
-	p.sendCloseChan <- &wg
-
-	wg.Wait()
+	p.closeWg.Wait()
 
 	p.sendConn.Close()
 	p.recvConn.Close()
@@ -101,10 +106,11 @@ func (p *udpProxy) Close() error {
 }
 
 func (p *udpProxy) recvLoop() {
+	p.closeWg.Add(1)
+	defer p.closeWg.Done()
 	for {
 		select {
-		case wg := <-p.recvCloseChan:
-			wg.Done()
+		case <-p.recvCloseChan:
 			return
 		default:
 			p.recvConn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
@@ -121,12 +127,13 @@ func (p *udpProxy) recvLoop() {
 }
 
 func (p *udpProxy) sendLoop() {
+	p.closeWg.Add(1)
+	defer p.closeWg.Done()
 	for {
 		select {
 		case payload := <-p.sendChan:
 			p.sendConn.Write(payload)
-		case wg := <-p.sendCloseChan:
-			wg.Done()
+		case <-p.sendCloseChan:
 			return
 		}
 	}

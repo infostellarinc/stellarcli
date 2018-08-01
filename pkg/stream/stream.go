@@ -32,7 +32,7 @@ const (
 )
 
 type SatelliteStream interface {
-	Start()
+	Start() error
 	Send(payload []byte) error
 
 	io.Closer
@@ -42,6 +42,7 @@ type satelliteStream struct {
 	satelliteId string
 	stream      stellarstation.StellarStationService_OpenSatelliteStreamClient
 	conn        *grpc.ClientConn
+	streamId    string
 
 	recvChan           chan []byte
 	recvLoopClosedChan chan struct{}
@@ -51,43 +52,26 @@ type satelliteStream struct {
 
 // NewSatelliteStream opens a stream to a satellite over the StellarStation API.
 func NewSatelliteStream(satelliteId string, recvChan chan []byte) (SatelliteStream, error) {
-	conn, err := apiclient.Dial()
-	if err != nil {
-		return nil, err
-	}
-
-	client := stellarstation.NewStellarStationServiceClient(conn)
-
-	stream, err := client.OpenSatelliteStream(context.Background())
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
-
-	req := stellarstation.SatelliteStreamRequest{
-		SatelliteId: satelliteId,
-	}
-
-	err = stream.Send(&req)
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
-
 	s := &satelliteStream{
 		satelliteId:        satelliteId,
-		stream:             stream,
-		conn:               conn,
+		streamId:           "",
 		recvChan:           recvChan,
 		state:              OPEN,
 		recvLoopClosedChan: make(chan struct{}),
 	}
+
 	return s, nil
 }
 
 // Start starts listening for data from the satellite.
-func (ss *satelliteStream) Start() {
+func (ss *satelliteStream) Start() error {
+	err := ss.openStream()
+	if err != nil {
+		return err
+	}
 	go ss.recvLoop()
+
+	return nil
 }
 
 // Send sends a packet to the satellite.
@@ -125,12 +109,50 @@ func (ss *satelliteStream) recvLoop() {
 			return
 		}
 		if err != nil {
-			if err != io.EOF {
+			if err == io.EOF {
+				// Server closed the stream, try to reconnect.
+				err = ss.openStream()
+				if err != nil {
+					// Couldn't reconnect to the server, bailout.
+					log.Fatal("Error opening API stream: %v\n", err)
+				}
+			} else {
 				log.Fatalf("Error reading from API stream: %v\n", err)
 			}
 		} else {
+			ss.streamId = res.StreamId
 			payload := res.GetReceiveTelemetryResponse().Telemetry.Data
 			ss.recvChan <- payload
 		}
 	}
+}
+
+func (ss *satelliteStream) openStream() error {
+	conn, err := apiclient.Dial()
+	if err != nil {
+		return err
+	}
+
+	client := stellarstation.NewStellarStationServiceClient(conn)
+
+	stream, err := client.OpenSatelliteStream(context.Background())
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	req := stellarstation.SatelliteStreamRequest{
+		SatelliteId: ss.satelliteId,
+		StreamId:    ss.streamId,
+	}
+
+	err = stream.Send(&req)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	ss.conn = conn
+	ss.stream = stream
+	return nil
 }

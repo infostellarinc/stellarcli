@@ -52,7 +52,10 @@ the satellite and any incoming packets will be returned as is.
 
 		c := make(chan os.Signal)
 
-		p.Start()
+		err = p.Start()
+		if err != nil {
+			log.Fatalf("Could not start UDP proxy: %v\n", err)
+		}
 		<-c
 		p.Close()
 	},
