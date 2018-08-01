@@ -23,7 +23,6 @@ import (
 )
 
 type UDPProxy interface {
-	Start() error
 	io.Closer
 }
 
@@ -41,9 +40,9 @@ type udpProxy struct {
 	closeWg sync.WaitGroup
 }
 
-// NewUDPProxy creates a UDPProxy that will listen for packets to send to the satellite and send back
+// StartUDPProxy creates a UDPProxy that listens for packets to send to the satellite and send back
 // received packets.
-func NewUDPProxy(recvAddr string, sendAddr string, satelliteId string) (UDPProxy, error) {
+func StartUDPProxy(recvAddr string, sendAddr string, satelliteId string) (UDPProxy, error) {
 	rc, err := net.ListenPacket("udp", recvAddr)
 	if err != nil {
 		return nil, err
@@ -74,21 +73,15 @@ func NewUDPProxy(recvAddr string, sendAddr string, satelliteId string) (UDPProxy
 		recvCloseChan: make(chan struct{}),
 		closeWg:       sync.WaitGroup{},
 	}
-	return p, nil
-}
 
-// Start starts the proxy, listening for packets to send to/from the satellite.
-func (p *udpProxy) Start() error {
-	err := p.stream.Start()
+	err = p.start()
 	if err != nil {
-		return err
+		rc.Close()
+		sc.Close()
+		return nil, err
 	}
 
-	p.closeWg.Add(2)
-	go p.sendLoop()
-	go p.recvLoop()
-
-	return nil
+	return p, nil
 }
 
 // Close closes the proxy.
@@ -136,4 +129,17 @@ func (p *udpProxy) sendLoop() {
 			return
 		}
 	}
+}
+
+func (p *udpProxy) start() error {
+	err := p.stream.Start()
+	if err != nil {
+		return err
+	}
+
+	p.closeWg.Add(2)
+	go p.sendLoop()
+	go p.recvLoop()
+
+	return nil
 }

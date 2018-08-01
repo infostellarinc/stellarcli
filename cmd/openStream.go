@@ -45,19 +45,18 @@ the satellite and any incoming packets will be returned as is.
 		recvAddr := listenHost + ":" + strconv.Itoa(int(listenPort))
 		sendAddr := sendHost + ":" + strconv.Itoa(int(sendPort))
 
-		p, err := stream.NewUDPProxy(recvAddr, sendAddr, args[0])
+		p, err := stream.StartUDPProxy(recvAddr, sendAddr, args[0])
 		if err != nil {
 			log.Fatalf("Could not open UDP proxy: %v\n", err)
 		}
+		defer p.Close()
 
 		c := make(chan os.Signal)
 
-		err = p.Start()
 		if err != nil {
 			log.Fatalf("Could not start UDP proxy: %v\n", err)
 		}
 		<-c
-		p.Close()
 	},
 }
 
