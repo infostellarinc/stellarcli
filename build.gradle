@@ -1,5 +1,6 @@
 plugins {
     id 'com.github.blindpirate.gogradle' version '0.10'
+    id 'com.github.breadmoirai.github-release' version '2.0.1'
 }
 
 golang {
@@ -7,11 +8,37 @@ golang {
     goVersion = '1.11beta2'
 }
 
+def platforms = ['darwin-amd64', 'linux-amd64', 'windows-amd64']
+
 build {
-    outputLocation = 'build/exe/${GOOS}_${GOARCH}/stellar${GOEXE}'
-    targetPlatform = ['darwin-amd64', 'linux-amd64', 'windows-amd64']
+    outputLocation = 'build/exe/${GOOS}-${GOARCH}/stellar${GOEXE}'
+    targetPlatform = platforms
     environment 'GOPATH', System.getenv('GOPATH') ?: file("${gradle.gradleUserHomeDir}/go/path").toString()
 }
+
+afterEvaluate {
+    platforms.forEach {platform ->
+        def camelCase = platform.split('-').collect({ it.capitalize()}).join()
+        task "archive${camelCase}"(type: Zip) {
+            dependsOn tasks."build${camelCase}"
+
+            archiveName = "stellar-${project.version}-${platform}.zip"
+            destinationDir = file('build/zip')
+
+            from "build/exe/${platform}"
+        }
+        tasks.build.dependsOn "archive${camelCase}"
+    }
+}
+
+githubRelease {
+    token = findProperty('github.apiToken') ?: ''
+    owner = 'infostellarinc'
+    repo = 'stellarcli'
+    releaseAssets = fileTree('build/zip')
+}
+
+tasks.githubRelease.dependsOn tasks.build
 
 // We use go modules and don't need gogradle's dependency management.
 tasks.resolveBuildDependencies.enabled = false
@@ -24,6 +51,6 @@ clean.doLast {
 }
 
 wrapper {
-    version = '4.9'
+    gradleVersion = '4.9'
     distributionType = 'ALL'
 }
