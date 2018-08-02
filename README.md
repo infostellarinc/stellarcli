@@ -1,6 +1,7 @@
 # stellar
 
-A command line utility for accessing the StellarStation API. Let's build stellar apps together!
+A command line utility for accessing the [StellarStation API](https://github.com/infostellarinc/stellarstation-api).
+Let's build stellar apps together!
 
 ## Using the app
 
@@ -34,7 +35,7 @@ downloaded and does not need to be installed.
 # Java users
 $ ./gradlew build
 
-# Non-Java users
+# Go users
 $ go build
 ```
 
