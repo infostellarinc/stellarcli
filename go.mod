@@ -6,7 +6,7 @@ require (
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/infostellarinc/go-stellarstation v0.0.7
+	github.com/infostellarinc/go-stellarstation v0.0.8
 	github.com/magiconair/properties v1.8.0 // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9
 	github.com/mitchellh/mapstructure v0.0.0-20180715050151-f15292f7a699 // indirect

@@ -70,7 +70,6 @@ func (ss *satelliteStream) Send(payload []byte) error {
 		SatelliteId: ss.satelliteId,
 		Request: &stellarstation.SatelliteStreamRequest_SendSatelliteCommandsRequest{
 			SendSatelliteCommandsRequest: &stellarstation.SendSatelliteCommandsRequest{
-				OutputFraming: stellarstation.Framing_AX25,
 				Command:       [][]byte{payload},
 			},
 		},
