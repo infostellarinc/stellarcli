@@ -1,0 +1,29 @@
+plugins {
+    id 'com.github.blindpirate.gogradle' version '0.10'
+}
+
+golang {
+    packagePath = 'github.com/infostellarinc/stellarcli'
+    goVersion = '1.11beta2'
+}
+
+build {
+    outputLocation = 'build/exe/${GOOS}_${GOARCH}/stellar${GOEXE}'
+    targetPlatform = ['darwin-amd64', 'linux-amd64', 'windows-amd64']
+    environment 'GOPATH', System.getenv('GOPATH') ?: file("${gradle.gradleUserHomeDir}/go/path").toString()
+}
+
+// We use go modules and don't need gogradle's dependency management.
+tasks.resolveBuildDependencies.enabled = false
+tasks.resolveTestDependencies.enabled = false
+tasks.installDependencies.enabled = false
+tasks.vendor.enabled = false
+
+clean.doLast {
+    delete 'build'
+}
+
+wrapper {
+    version = '4.9'
+    distributionType = 'ALL'
+}
