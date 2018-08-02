@@ -4,7 +4,7 @@ A command line utility for accessing the StellarStation API. Let's build stellar
 
 ## Using the app
 
-Precombiled binaries of the app can be found on the [releases page](https://github.com/infostellarinc/stellarcli/releases).
+Precompiled binaries of the app can be found on the [releases page](https://github.com/infostellarinc/stellarcli/releases).
 
 We attempt to give detailed information on using the app in the tool's help message.
 
