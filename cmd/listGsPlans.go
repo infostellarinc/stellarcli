@@ -1,0 +1,64 @@
+// Copyright © 2018 Infostellar, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package cmd
+
+import (
+	"github.com/spf13/cobra"
+	"time"
+	"github.com/infostellarinc/stellarcli/pkg/plan"
+)
+
+const (
+	// Time format used to parse "after" and "before" flags.
+	timeFormat = "2006-01-02 15:04"
+	// Default time range used when end time is not specified.
+	defaultDurainInDays = 31
+)
+
+var (
+	flgAOSAfter  string
+	flgAOSBefore string
+)
+
+// listGSPlansCmd represents the ground station command
+var listGSPlansCmd = &cobra.Command{
+	Use:   "list-plans [Ground Station ID]",
+	Short: "Lists plans on a ground station.",
+	Long: `Lists plans on a ground station. Plans having AOS between the given time range will be returned.
+If start time is not specified, current time is used.
+If end time is not specified, 31 days after start time is used.`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+
+		aosAfter, err := time.Parse(timeFormat, flgAOSAfter)
+		if err != nil {
+			aosAfter = time.Now()
+		}
+
+		aosBefore, err := time.Parse(timeFormat, flgAOSBefore)
+		if err != nil {
+			aosBefore = aosAfter.AddDate(0, 0, defaultDurainInDays)
+		}
+
+		plan.ListPlans(args[0], aosAfter, aosBefore)
+	},
+}
+
+func init() {
+	gsCmd.AddCommand(listGSPlansCmd)
+
+	listGSPlansCmd.Flags().StringVarP(&flgAOSAfter, "aos-after", "a", "", "The start time of the range of plans to list (inclusive).")
+	listGSPlansCmd.Flags().StringVarP(&flgAOSBefore, "aos-before", "b", "", "The end time of the range of plans to list (exclusive).")
+}
