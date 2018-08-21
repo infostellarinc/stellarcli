@@ -22,9 +22,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+
 	"github.com/infostellarinc/go-stellarstation/api/v1/groundstation"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
-	"github.com/infostellarinc/stellarcli/pkg/util"
 )
 
 // Default format of time.Timestamp when conerting it to a textual representation
@@ -53,11 +54,21 @@ func ListPlans(id string, aosAfter, aosBefore time.Time) {
 	}
 	defer conn.Close()
 
+	aosAfterTimestamp, err := ptypes.TimestampProto(aosAfter.UTC())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	aosBeforeTimestamp, err := ptypes.TimestampProto(aosBefore.UTC())
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	client := groundstation.NewGroundStationServiceClient(conn)
 	request := &groundstation.ListPlansRequest{
 		GroundStationId: id,
-		AosAfter:        util.ToTimestamp(aosAfter),
-		AosBefore:       util.ToTimestamp(aosBefore),
+		AosAfter:        aosAfterTimestamp,
+		AosBefore:       aosBeforeTimestamp,
 	}
 
 	result, err := client.ListPlans(context.Background(), request)
@@ -73,13 +84,20 @@ func ListPlans(id string, aosAfter, aosBefore time.Time) {
 
 	fmt.Println(strings.Join(headers, sep))
 	for _, plan := range result.Plan {
-		aos := util.ToUTCTime(plan.AosTime).Format(layout)
-		los := util.ToUTCTime(plan.LosTime).Format(layout)
+		aos, err := ptypes.Timestamp(plan.AosTime)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		los, err := ptypes.Timestamp(plan.LosTime)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		var b bytes.Buffer
 		b.WriteString(fmt.Sprintf("%q%s", plan.PlanId, sep))
-		b.WriteString(fmt.Sprintf("%q%s", aos, sep))
-		b.WriteString(fmt.Sprintf("%q%s", los, sep))
+		b.WriteString(fmt.Sprintf("%q%s", aos.Format(layout), sep))
+		b.WriteString(fmt.Sprintf("%q%s", los.Format(layout), sep))
 		b.WriteString(fmt.Sprintf("%v%s", plan.DownlinkCenterFrequencyHz, sep))
 		b.WriteString(fmt.Sprintf("%v%s", plan.UplinkCenterFrequencyHz, sep))
 		b.WriteString(fmt.Sprintf("%q%s", plan.Tle.Line_1, sep))

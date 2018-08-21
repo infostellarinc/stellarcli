@@ -15,10 +15,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"time"
-	"github.com/infostellarinc/stellarcli/pkg/plan"
 	"fmt"
+	"time"
+
+	"github.com/spf13/cobra"
+
+	"github.com/infostellarinc/stellarcli/pkg/plan"
 )
 
 const (
@@ -40,7 +42,8 @@ var (
 var listGSPlansCmd = &cobra.Command{
 	Use:   "list-plans [Ground Station ID]",
 	Short: "Lists plans on a ground station.",
-	Long:  `Lists plans on a ground station. Plans having AOS between the given time range will be returned.`,
+	Long: `Lists plans on a ground station. Plans having AOS between the given time range are returned. 
+When run with default flags, plans in the next 31 days are returned.`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
@@ -75,7 +78,7 @@ func init() {
 		`The start time (UTC) of the range of plans to list (inclusive). Example: "2006-01-02 15:04:00 (default current time"`)
 	listGSPlansCmd.Flags().StringVarP(&flgAOSBefore, "aos-before", "b", "",
 		`The end time (UTC) of the range of plans to list (exclusive). Example: "2006-01-02 15:14:00" `+
-			fmt.Sprintf("(default current time + %d days", defaultDurationInDays))
+			fmt.Sprintf("(default aos-after + %d days", defaultDurationInDays))
 	listGSPlansCmd.Flags().Uint8VarP(&flgDuration, "duration", "d", defaultDurationInDays,
-		fmt.Sprintf("Duration of the range of plans to list (1-%v). Duration will be ignored when aos-before is specified.", maxDurationInDays))
+		fmt.Sprintf("Duration of the range of plans to list (1-%v), in days. Duration will be ignored when aos-before is specified.", maxDurationInDays))
 }
