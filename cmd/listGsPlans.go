@@ -18,18 +18,22 @@ import (
 	"github.com/spf13/cobra"
 	"time"
 	"github.com/infostellarinc/stellarcli/pkg/plan"
+	"fmt"
 )
 
 const (
 	// Time format used to parse "after" and "before" flags.
-	timeFormat = "2006-01-02 15:04"
+	timeFormat = "2006-01-02 15:04:05"
 	// Default time range used when end time is not specified.
 	defaultDurationInDays = 31
+	// Maximum value of duration in days.
+	maxDurationInDays = 31
 )
 
 var (
 	flgAOSAfter  string
 	flgAOSBefore string
+	flgDuration  uint8
 )
 
 // listGSPlansCmd represents the ground station command
@@ -39,7 +43,17 @@ var listGSPlansCmd = &cobra.Command{
 	Long: `Lists plans on a ground station. Plans having AOS between the given time range will be returned.
 If start time is not specified, current time is used.
 If end time is not specified, 31 days after start time is used.`,
-	Args: cobra.ExactArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
+		}
+
+		if flgDuration == 0 || flgDuration > maxDurationInDays {
+			return fmt.Errorf("Invalid value of duration: %v. Expected value: 1-%v", flgDuration, maxDurationInDays)
+		}
+
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 
 		aosAfter, err := time.Parse(timeFormat, flgAOSAfter)
@@ -49,7 +63,7 @@ If end time is not specified, 31 days after start time is used.`,
 
 		aosBefore, err := time.Parse(timeFormat, flgAOSBefore)
 		if err != nil {
-			aosBefore = aosAfter.AddDate(0, 0, defaultDurationInDays)
+			aosBefore = aosAfter.AddDate(0, 0, int(flgDuration))
 		}
 
 		plan.ListPlans(args[0], aosAfter, aosBefore)
@@ -59,6 +73,10 @@ If end time is not specified, 31 days after start time is used.`,
 func init() {
 	gsCmd.AddCommand(listGSPlansCmd)
 
-	listGSPlansCmd.Flags().StringVarP(&flgAOSAfter, "aos-after", "a", "", "The start time of the range of plans to list (inclusive).")
-	listGSPlansCmd.Flags().StringVarP(&flgAOSBefore, "aos-before", "b", "", "The end time of the range of plans to list (exclusive).")
+	listGSPlansCmd.Flags().StringVarP(&flgAOSAfter, "aos-after", "a", "",
+		`The start time of the range of plans to list (inclusive). Example: "2006-01-02 15:04:00"`)
+	listGSPlansCmd.Flags().StringVarP(&flgAOSBefore, "aos-before", "b", "",
+		`The end time of the range of plans to list (exclusive). Example: "2006-01-02 15:14:00"`)
+	listGSPlansCmd.Flags().Uint8VarP(&flgDuration, "duration", "d", defaultDurationInDays,
+		fmt.Sprintf("Duration of the range of plans to list (1-%v). Duration will be ignored when aos-before is specified.", maxDurationInDays))
 }
