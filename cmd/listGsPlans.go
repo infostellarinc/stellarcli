@@ -42,7 +42,8 @@ var listGSPlansCmd = &cobra.Command{
 	Short: "Lists plans on a ground station.",
 	Long: `Lists plans on a ground station. Plans having AOS between the given time range will be returned.
 If start time is not specified, current time is used.
-If end time is not specified, 31 days after start time is used.`,
+If end time is not specified, 31 days after start time is used.
+A time in flags need to be set as UTC.`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
@@ -74,9 +75,9 @@ func init() {
 	gsCmd.AddCommand(listGSPlansCmd)
 
 	listGSPlansCmd.Flags().StringVarP(&flgAOSAfter, "aos-after", "a", "",
-		`The start time of the range of plans to list (inclusive). Example: "2006-01-02 15:04:00"`)
+		`The start time (UTC) of the range of plans to list (inclusive). Example: "2006-01-02 15:04:00"`)
 	listGSPlansCmd.Flags().StringVarP(&flgAOSBefore, "aos-before", "b", "",
-		`The end time of the range of plans to list (exclusive). Example: "2006-01-02 15:14:00"`)
+		`The end time (UTC) of the range of plans to list (exclusive). Example: "2006-01-02 15:14:00"`)
 	listGSPlansCmd.Flags().Uint8VarP(&flgDuration, "duration", "d", defaultDurationInDays,
 		fmt.Sprintf("Duration of the range of plans to list (1-%v). Duration will be ignored when aos-before is specified.", maxDurationInDays))
 }
