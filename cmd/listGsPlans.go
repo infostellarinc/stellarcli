@@ -24,7 +24,7 @@ const (
 	// Time format used to parse "after" and "before" flags.
 	timeFormat = "2006-01-02 15:04"
 	// Default time range used when end time is not specified.
-	defaultDurainInDays = 31
+	defaultDurationInDays = 31
 )
 
 var (
@@ -49,7 +49,7 @@ If end time is not specified, 31 days after start time is used.`,
 
 		aosBefore, err := time.Parse(timeFormat, flgAOSBefore)
 		if err != nil {
-			aosBefore = aosAfter.AddDate(0, 0, defaultDurainInDays)
+			aosBefore = aosAfter.AddDate(0, 0, defaultDurationInDays)
 		}
 
 		plan.ListPlans(args[0], aosAfter, aosBefore)
