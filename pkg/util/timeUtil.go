@@ -5,11 +5,8 @@ import (
 	"time"
 )
 
-// Default layout of string representation.
-const defautlLayout = time.RFC3339
-
 // ToTime returns a time.Time from a *timestamp.Timestamp.
-func ToTime(t *timestamp.Timestamp) time.Time {
+func ToUTCTime(t *timestamp.Timestamp) time.Time {
 	return time.Unix(t.Seconds, int64(t.Nanos)).UTC()
 }
 

@@ -30,7 +30,7 @@ import (
 // Default foamt of time.Timestamp when conerting it to a textual representation
 const defaultFormat = time.RFC3339
 
-// Default defaultSeparator of columns
+// Default separator between columns
 const defaultSeparator = ","
 
 // Headers of columns
@@ -73,8 +73,8 @@ func ListPlans(id string, aosAfter, aosBefore time.Time) {
 
 	fmt.Println(strings.Join(headers, sep))
 	for _, plan := range result.Plan {
-		aos := util.ToTime(plan.AosTime).Format(layout)
-		los := util.ToTime(plan.LosTime).Format(layout)
+		aos := util.ToUTCTime(plan.AosTime).Format(layout)
+		los := util.ToUTCTime(plan.LosTime).Format(layout)
 
 		var b bytes.Buffer
 		b.WriteString(fmt.Sprintf("%q%s", plan.PlanId, sep))
