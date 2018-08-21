@@ -40,10 +40,7 @@ var (
 var listGSPlansCmd = &cobra.Command{
 	Use:   "list-plans [Ground Station ID]",
 	Short: "Lists plans on a ground station.",
-	Long: `Lists plans on a ground station. Plans having AOS between the given time range will be returned.
-If start time is not specified, current time is used.
-If end time is not specified, 31 days after start time is used.
-A time in flags need to be set as UTC.`,
+	Long: `Lists plans on a ground station. Plans having AOS between the given time range will be returned.`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
