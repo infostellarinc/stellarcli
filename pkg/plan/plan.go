@@ -28,7 +28,7 @@ import (
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 )
 
-// Default format of time.Timestamp when conerting it to a textual representation
+// Default format of time.Timestamp when converting it to a textual representation
 const defaultFormat = time.RFC3339
 
 // Default separator between columns
