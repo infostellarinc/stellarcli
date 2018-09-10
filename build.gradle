@@ -1,31 +1,39 @@
+buildscript {
+    repositories {
+        jcenter()
+        gradlePluginPortal()
+        maven {
+            url 'http://dl.bintray.com/curioswitch/curiostack'
+        }
+        mavenLocal()
+    }
+    dependencies {
+        classpath "org.curioswitch.curiostack:gradle-golang-plugin:0.0.2"
+    }
+}
+
 plugins {
-    id 'com.github.blindpirate.gogradle' version '0.10'
     id 'com.github.breadmoirai.github-release' version '2.0.1'
 }
 
+apply plugin: 'org.curioswitch.gradle-golang-plugin'
+
 golang {
-    packagePath = 'github.com/infostellarinc/stellarcli'
-    goVersion = '1.11beta2'
-}
-
-def platforms = ['darwin-amd64', 'linux-amd64', 'windows-amd64']
-
-build {
-    outputLocation = 'build/exe/${GOOS}-${GOARCH}/stellar${GOEXE}'
-    targetPlatform = platforms
-    environment 'GOPATH', System.getenv('GOPATH') ?: file("${gradle.gradleUserHomeDir}/go/path").toString()
+    executableName = 'stellar'
+    goOses = ['linux', 'darwin', 'windows']
+    goArchs = ['amd64']
 }
 
 afterEvaluate {
-    platforms.forEach {platform ->
-        def camelCase = platform.split('-').collect({ it.capitalize()}).join()
+    golang.goOses.get().each {goOs ->
+        def camelCase = goOs.capitalize() + 'Amd64'
         task "archive${camelCase}"(type: Zip) {
-            dependsOn tasks."build${camelCase}"
+            dependsOn tasks."goBuild${camelCase}"
 
-            archiveName = "stellar-${project.version}-${platform}.zip"
+            archiveName = "stellar-${project.version}-${goOs}-amd64.zip"
             destinationDir = file('build/zip')
 
-            from "build/exe/${platform}"
+            from "build/exe/${goOs}-amd64"
         }
         tasks.build.dependsOn "archive${camelCase}"
     }
@@ -40,17 +48,7 @@ githubRelease {
 
 tasks.githubRelease.dependsOn tasks.build
 
-// We use go modules and don't need gogradle's dependency management.
-tasks.resolveBuildDependencies.enabled = false
-tasks.resolveTestDependencies.enabled = false
-tasks.installDependencies.enabled = false
-tasks.vendor.enabled = false
-
-clean.doLast {
-    delete 'build'
-}
-
 wrapper {
-    gradleVersion = '4.9'
+    gradleVersion = '4.10'
     distributionType = 'ALL'
 }
