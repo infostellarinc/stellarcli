@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: infostellarinc/stellarcli-builder
+      - image: openjdk:10-slim
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -27,11 +27,11 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1.0-dependencies
+          - v2.0-dependencies
 
       - run: ./gradlew --no-daemon build
 
       - save_cache:
           paths:
             - ~/.gradle
-          key: v1.0-dependencies
+          key: v2.0-dependencies

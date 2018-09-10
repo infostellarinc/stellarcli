@@ -20,8 +20,8 @@ import (
 	"log"
 	"sync/atomic"
 
-	"google.golang.org/grpc"
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
+	"google.golang.org/grpc"
 
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 )
@@ -70,7 +70,7 @@ func (ss *satelliteStream) Send(payload []byte) error {
 		SatelliteId: ss.satelliteId,
 		Request: &stellarstation.SatelliteStreamRequest_SendSatelliteCommandsRequest{
 			SendSatelliteCommandsRequest: &stellarstation.SendSatelliteCommandsRequest{
-				Command:       [][]byte{payload},
+				Command: [][]byte{payload},
 			},
 		},
 	}
@@ -103,7 +103,7 @@ func (ss *satelliteStream) recvLoop() {
 				err = ss.openStream()
 				if err != nil {
 					// Couldn't reconnect to the server, bailout.
-					log.Fatal("Error opening API stream: %v\n", err)
+					log.Fatalf("Error opening API stream: %v\n", err)
 				}
 			} else {
 				log.Fatalf("Error reading from API stream: %v\n", err)
