@@ -16,6 +16,8 @@ package apiclient
 
 import (
 	"crypto/tls"
+	"os"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -30,8 +32,18 @@ func Dial() (*grpc.ClientConn, error) {
 		return nil, err
 	}
 
+	apiUrl := os.Getenv("STELLARSTATION_API_URL")
+	if len(apiUrl) == 0 {
+		apiUrl = "api.stellarstation.com:443"
+	}
+
+	tlsConfig := &tls.Config{}
+	if strings.HasPrefix(apiUrl, "localhost") || strings.HasPrefix(apiUrl, "127.0.0.1") {
+		tlsConfig.InsecureSkipVerify = true
+	}
+
 	return grpc.Dial(
-		"api.stellarstation.com:443",
-		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+		apiUrl,
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithPerRPCCredentials(creds))
 }
