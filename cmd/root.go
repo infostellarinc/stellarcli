@@ -16,6 +16,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/infostellarinc/stellarcli/cmd/auth"
+	"github.com/infostellarinc/stellarcli/cmd/groundstation"
+	"github.com/infostellarinc/stellarcli/cmd/satellite"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -51,6 +54,11 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config/stellar/config.yaml)")
+
+	// Add sub commands
+	rootCmd.AddCommand(auth.AuthCmd)
+	rootCmd.AddCommand(groundstation.GroundStationCmd)
+	rootCmd.AddCommand(satellite.SatelliteCmd)
 }
 
 func initConfig() {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package groundstation
 
 import (
 	"fmt"
@@ -72,8 +72,6 @@ When run with default flags, plans in the next 31 days are returned.`,
 }
 
 func init() {
-	gsCmd.AddCommand(listGSPlansCmd)
-
 	listGSPlansCmd.Flags().StringVarP(&flgAOSAfter, "aos-after", "a", "",
 		`The start time (UTC) of the range of plans to list (inclusive). Example: "2006-01-02 15:04:00 (default current time"`)
 	listGSPlansCmd.Flags().StringVarP(&flgAOSBefore, "aos-before", "b", "",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package satellite
 
 import (
 	"log"
@@ -61,8 +61,6 @@ the satellite and any incoming packets will be returned as is.
 }
 
 func init() {
-	satelliteCmd.AddCommand(openStreamCmd)
-
 	openStreamCmd.Flags().StringVarP(&mode, "mode", "m", "udp", "The proxy mode to use. One of [udp].")
 	openStreamCmd.Flags().StringVar(&listenHost, "listen-host", "127.0.0.1", "The host to listen for packets on.")
 	openStreamCmd.Flags().Uint16Var(&listenPort, "listen-port", 6000, "The port to listen for packets on.")
