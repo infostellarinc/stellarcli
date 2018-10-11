@@ -21,7 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/infostellarinc/stellarcli/pkg/stream"
+	"github.com/infostellarinc/stellarcli/pkg/satellite/stream"
 )
 
 var (

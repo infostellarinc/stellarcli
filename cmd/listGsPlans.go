@@ -20,7 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/infostellarinc/stellarcli/pkg/plan"
+	"github.com/infostellarinc/stellarcli/pkg/groundstation/plan"
 )
 
 const (
