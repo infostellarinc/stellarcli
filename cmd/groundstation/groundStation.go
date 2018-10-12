@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package groundstation
 
 import (
 	"github.com/spf13/cobra"
 )
 
 // gsCmd represents the satellite command
-var gsCmd = &cobra.Command{
+var GroundStationCmd = &cobra.Command{
 	Use:     "ground-station",
 	Aliases: []string{"gs"},
 	Short:   "Commands for working with ground stations",
 }
 
 func init() {
-	rootCmd.AddCommand(gsCmd)
+	GroundStationCmd.AddCommand(listGSPlansCmd)
 }

@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package satellite
 
 import (
 	"github.com/spf13/cobra"
 )
 
-// authCmd represents the auth command
-var authCmd = &cobra.Command{
-	Use:   "auth",
-	Short: "Commands for authenticating the stellar tool.",
+// satelliteCmd represents the satellite command
+var SatelliteCmd = &cobra.Command{
+	Use:   "satellite",
+	Short: "Commands for working with satellites",
 }
 
 func init() {
-	rootCmd.AddCommand(authCmd)
+	SatelliteCmd.AddCommand(openStreamCmd)
 }

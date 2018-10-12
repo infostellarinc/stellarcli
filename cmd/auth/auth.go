@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package auth
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/infostellarinc/stellarcli/pkg/auth"
 )
 
-// activateApiKeyCmd represents the activateApiKey command
-var activateApiKeyCmd = &cobra.Command{
-	Use:   "activate-api-key [path-to-key]",
-	Short: "Activate an API key for use in following commands.",
-	Long: `Activates an API key for use in following commands by copying it to the
-configuration directory.`,
-	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		auth.StoreCredentialsFile(args[0])
-	},
+// authCmd represents the auth command
+var AuthCmd = &cobra.Command{
+	Use:   "auth",
+	Short: "Commands for authenticating the stellar tool.",
 }
 
 func init() {
-	authCmd.AddCommand(activateApiKeyCmd)
+	AuthCmd.AddCommand(activateApiKeyCmd)
 }
