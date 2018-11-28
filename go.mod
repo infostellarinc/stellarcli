@@ -3,6 +3,7 @@ module github.com/infostellarinc/stellarcli
 require (
 	cloud.google.com/go v0.25.0 // indirect
 	github.com/BurntSushi/toml v0.3.0 // indirect
+	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
@@ -21,7 +22,7 @@ require (
 	github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec // indirect
 	github.com/spf13/pflag v1.0.1 // indirect
 	github.com/spf13/viper v1.0.2
-	github.com/stretchr/testify v1.2.2 // indirect
+	github.com/stretchr/testify v1.2.2
 	golang.org/x/net v0.0.0-20180906233101-161cd47e91fd // indirect
 	golang.org/x/oauth2 v0.0.0-20180724155351-3d292e4d0cdc // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect

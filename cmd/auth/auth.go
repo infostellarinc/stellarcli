@@ -15,13 +15,19 @@
 package auth
 
 import (
+	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/spf13/cobra"
+)
+
+var (
+	authUse   = util.Normalize("auth")
+	authShort = util.Normalize("Commands for authenticating the stellar tool.")
 )
 
 // authCmd represents the auth command
 var AuthCmd = &cobra.Command{
-	Use:   "auth",
-	Short: "Commands for authenticating the stellar tool.",
+	Use:   authUse,
+	Short: authShort,
 }
 
 func init() {

@@ -19,6 +19,7 @@ import (
 	"github.com/infostellarinc/stellarcli/cmd/auth"
 	"github.com/infostellarinc/stellarcli/cmd/groundstation"
 	"github.com/infostellarinc/stellarcli/cmd/satellite"
+	"github.com/infostellarinc/stellarcli/cmd/util"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -27,20 +28,24 @@ import (
 	"github.com/infostellarinc/stellarcli/pkg/config"
 )
 
+var (
+	stellarUse  = util.Normalize("stellar")
+	stellarLong = util.Normalize(`stellar is a command line tool for using the StellarStation API.
+
+		To begin, it is generally needed to authenticate the tool by running
+
+		$ stellar auth activate-api-key path/to/stellarstation-private-key.json
+
+		All commands should work after that.`)
+	stellarShort = util.Normalize("stellar is a command line tool for using the StellarStation API.")
+)
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "stellar",
-	Short: "stellar is a command line tool for using the StellarStation API.",
-	Long: `stellar is a command line tool for using the StellarStation API.
-
-To begin, it is generally needed to authenticate the tool by running
-
-$ stellar auth activate-api-key path/to/stellarstation-private-key.json
-
-All commands should work after that.
-`,
+	Use:   stellarUse,
+	Short: stellarShort,
+	Long:  stellarLong,
 }
 
 func Execute() {

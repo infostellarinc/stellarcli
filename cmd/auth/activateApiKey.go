@@ -15,18 +15,24 @@
 package auth
 
 import (
-	"github.com/spf13/cobra"
-
+	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/auth"
+	"github.com/spf13/cobra"
+)
+
+var (
+	activateApiKeyUse   = util.Normalize("activate-api-key [path-to-key]")
+	activateApiKeyShort = util.Normalize("Activate an API key for use in following commands.")
+	activateApiKeyLong  = util.Normalize(`Activates an API key for use in following commands by copying it to the
+		configuration directory.`)
 )
 
 // activateApiKeyCmd represents the activateApiKey command
 var activateApiKeyCmd = &cobra.Command{
-	Use:   "activate-api-key [path-to-key]",
-	Short: "Activate an API key for use in following commands.",
-	Long: `Activates an API key for use in following commands by copying it to the
-configuration directory.`,
-	Args: cobra.ExactArgs(1),
+	Use:   activateApiKeyUse,
+	Short: activateApiKeyShort,
+	Long:  activateApiKeyLong,
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		auth.StoreCredentialsFile(args[0])
 	},
