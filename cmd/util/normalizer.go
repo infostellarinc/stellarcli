@@ -36,24 +36,17 @@ import (
 	"github.com/MakeNowJust/heredoc"
 )
 
-// Normalizer normalizes a string by removing indentation in it and trim it.
-type normalizer struct {
-	string
-}
-
 // Remove indentation of the string, which may be added when defining it with raw string literals
-func (s normalizer) heredoc() normalizer {
-	s.string = heredoc.Doc(s.string)
-	return s
+func applyHeredoc(s string) string {
+	return heredoc.Doc(s)
 }
 
 // Remove leading and trailing spaces.
-func (s normalizer) trim() normalizer {
-	s.string = strings.TrimSpace(s.string)
-	return s
+func trim(s string) string {
+	return strings.TrimSpace(s)
 }
 
 // Normalize the string by removing indentation and trimming.
 func Normalize(s string) string {
-	return normalizer{s}.heredoc().trim().string
+	return trim(applyHeredoc(s))
 }
