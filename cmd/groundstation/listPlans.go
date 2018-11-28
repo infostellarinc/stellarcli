@@ -20,6 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/groundstation/plan"
 )
 
@@ -33,6 +34,14 @@ const (
 )
 
 var (
+	listPlansUse   = util.Normalize("list-plans [Ground Station ID]")
+	listPlansShort = util.Normalize("Lists plans on a ground station.")
+	listPlansLong  = util.Normalize(
+		`Lists plans on a ground station. Plans having AOS between the given time range are returned.
+		When run with default flags, plans in the next 31 days are returned.`)
+)
+
+var (
 	flgAOSAfter  string
 	flgAOSBefore string
 	flgDuration  uint8
@@ -40,17 +49,16 @@ var (
 
 // listGSPlansCmd represents the ground station command
 var listGSPlansCmd = &cobra.Command{
-	Use:   "list-plans [Ground Station ID]",
-	Short: "Lists plans on a ground station.",
-	Long: `Lists plans on a ground station. Plans having AOS between the given time range are returned. 
-When run with default flags, plans in the next 31 days are returned.`,
+	Use:   listPlansUse,
+	Short: listPlansShort,
+	Long:  listPlansLong,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
 		}
 
 		if flgDuration == 0 || flgDuration > maxDurationInDays {
-			return fmt.Errorf("Invalid value of duration: %v. Expected value: 1-%v", flgDuration, maxDurationInDays)
+			return fmt.Errorf("invalid value of duration: %v. Expected value: 1-%v", flgDuration, maxDurationInDays)
 		}
 
 		return nil

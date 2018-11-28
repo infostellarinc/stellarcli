@@ -16,13 +16,20 @@ package groundstation
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/infostellarinc/stellarcli/cmd/util"
+)
+
+var (
+	gsUsage = util.Normalize("ground-station")
+	gsShort = util.Normalize("Commands for working with ground stations.")
 )
 
 // gsCmd represents the satellite command
 var GroundStationCmd = &cobra.Command{
-	Use:     "ground-station",
+	Use:     gsUsage,
 	Aliases: []string{"gs"},
-	Short:   "Commands for working with ground stations",
+	Short:   gsShort,
 }
 
 func init() {

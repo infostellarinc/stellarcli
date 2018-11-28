@@ -16,12 +16,19 @@ package satellite
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/infostellarinc/stellarcli/cmd/util"
+)
+
+var (
+	satelliteUse   = util.Normalize("satellite")
+	satelliteShort = util.Normalize("Commands for working with satellites")
 )
 
 // satelliteCmd represents the satellite command
 var SatelliteCmd = &cobra.Command{
-	Use:   "satellite",
-	Short: "Commands for working with satellites",
+	Use:   satelliteUse,
+	Short: satelliteShort,
 }
 
 func init() {

@@ -21,7 +21,17 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/satellite/stream"
+)
+
+var (
+	openStreamUse   = util.Normalize("open-stream [satellite-id]")
+	openStreamShort = util.Normalize("Opens a proxy to stream packets to and from a satellite.")
+	openStreamLong  = util.Normalize(
+		`Opens a proxy to stream packets to and from a satellite. Currently only
+		UDP is supported. Packets received by the proxy will be sent with the specified framing to
+		the satellite and any incoming packets will be returned as is.`)
 )
 
 var (
@@ -34,13 +44,10 @@ var (
 
 // openStreamCmd represents the openStream command
 var openStreamCmd = &cobra.Command{
-	Use:   "open-stream [satellite-id]",
-	Short: "Opens a proxy to stream packets to and from a satellite.",
-	Long: `Opens a proxy to stream packets to and from a satellite. Currently only
-UDP is supported. Packets received by the proxy will be sent with the specified framing to
-the satellite and any incoming packets will be returned as is.
-`,
-	Args: cobra.ExactArgs(1),
+	Use:   openStreamUse,
+	Short: openStreamShort,
+	Long:  openStreamLong,
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		recvAddr := listenHost + ":" + strconv.Itoa(int(listenPort))
 		sendAddr := sendHost + ":" + strconv.Itoa(int(sendPort))
