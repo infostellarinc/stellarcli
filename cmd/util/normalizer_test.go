@@ -15,37 +15,40 @@
 package util
 
 import (
-	"github.com/stretchr/testify/assert"
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-// Test if leading and trailing spaces are removed by Normalize().
-func TestTrimming(t *testing.T) {
-	actual := Normalize(" abc ")
+var _ = Describe("ring buffer", func() {
 
-	expected := "abc"
-	assert.Equal(t, expected, actual)
-}
+	It("trims", func() {
+		Expect(Normalize(" ")).To(Equal(""))
+		Expect(Normalize(" a")).To(Equal("a"))
+		Expect(Normalize("b ")).To(Equal("b"))
+		Expect(Normalize(" abc ")).To(Equal("abc"))
+	})
 
-// Test if indentations in raw string literal are removed by Normalize().
-func TestHeredoc(t *testing.T) {
-	actual := Normalize(`sentence1
-		sentence2
-		sentence3
-	`)
-	expected := "sentence1\nsentence2\nsentence3"
+	It("heredoc", func() {
+		Expect(Normalize(Normalize(`sentence1
+			sentence2
+			sentence3
+		`))).To(Equal("sentence1\nsentence2\nsentence3"))
 
-	assert.Equal(t, expected, actual)
-}
+		Expect(Normalize(Normalize(`
+			sentence1
+			sentence2
+			sentence3
+		`))).To(Equal("sentence1\nsentence2\nsentence3"))
+	})
 
-// Test if trim and heredoc is applied to the given string.
-func TestNormalize(t *testing.T) {
-	actual := Normalize(`  sentence1
-		sentence2
-		sentence3
-    
-	`)
-	expected := "sentence1\nsentence2\nsentence3"
+	It("normalize", func() {
+		actual := Normalize(`  sentence1
+			sentence2
+			sentence3
+		
+		`)
 
-	assert.Equal(t, expected, actual)
-}
+		//assert.Equal(t, expected, actual)
+		Expect(Normalize(actual)).To(Equal("sentence1\nsentence2\nsentence3"))
+	})
+})
