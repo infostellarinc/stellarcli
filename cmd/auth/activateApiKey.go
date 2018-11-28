@@ -15,9 +15,10 @@
 package auth
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/auth"
-	"github.com/spf13/cobra"
 )
 
 var (

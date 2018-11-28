@@ -15,8 +15,9 @@
 package groundstation
 
 import (
-	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/spf13/cobra"
+
+	"github.com/infostellarinc/stellarcli/cmd/util"
 )
 
 var (

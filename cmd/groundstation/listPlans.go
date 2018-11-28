@@ -16,11 +16,11 @@ package groundstation
 
 import (
 	"fmt"
-	"github.com/infostellarinc/stellarcli/cmd/util"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/groundstation/plan"
 )
 
