@@ -15,9 +15,16 @@
 package main
 
 import (
+	"fmt"
 	"github.com/infostellarinc/stellarcli/cmd"
+	"os"
 )
 
 func main() {
-	cmd.Execute()
+	// Execute root command.
+	cmd := cmd.NewRootCommand()
+	if err := cmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
