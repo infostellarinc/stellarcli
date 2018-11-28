@@ -36,7 +36,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 )
 
-// Normalizer normalize a string by removing indentation in it and trim it.
+// Normalizer normalizes a string by removing indentation in it and trim it.
 type normalizer struct {
 	string
 }
