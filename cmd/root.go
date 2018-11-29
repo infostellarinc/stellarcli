@@ -15,11 +15,12 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/infostellarinc/stellarcli/cmd/auth"
 	"github.com/infostellarinc/stellarcli/cmd/groundstation"
 	"github.com/infostellarinc/stellarcli/cmd/satellite"
 	"github.com/infostellarinc/stellarcli/cmd/util"
-	"github.com/spf13/cobra"
 )
 
 var (
