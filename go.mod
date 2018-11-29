@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.1.0
 	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/infostellarinc/go-stellarstation v0.0.0-20180820094521-df542f515152
+	github.com/infostellarinc/go-stellarstation v0.1.0
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9
 	github.com/onsi/ginkgo v1.7.0
 	github.com/onsi/gomega v1.4.1

@@ -98,8 +98,8 @@ func ListPlans(id string, aosAfter, aosBefore time.Time) {
 		b.WriteString(fmt.Sprintf("%q%s", plan.PlanId, sep))
 		b.WriteString(fmt.Sprintf("%q%s", aos.Format(layout), sep))
 		b.WriteString(fmt.Sprintf("%q%s", los.Format(layout), sep))
-		b.WriteString(fmt.Sprintf("%v%s", plan.DownlinkCenterFrequencyHz, sep))
-		b.WriteString(fmt.Sprintf("%v%s", plan.UplinkCenterFrequencyHz, sep))
+		b.WriteString(fmt.Sprintf("%v%s", plan.DownlinkRadioDevice.CenterFrequencyHz, sep))
+		b.WriteString(fmt.Sprintf("%v%s", plan.UplinkRadioDevice.CenterFrequencyHz, sep))
 		b.WriteString(fmt.Sprintf("%q%s", plan.Tle.Line_1, sep))
 		b.WriteString(fmt.Sprintf("%q%s", plan.Tle.Line_2, sep))
 
