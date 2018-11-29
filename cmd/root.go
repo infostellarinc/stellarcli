@@ -45,8 +45,8 @@ func NewRootCommand() *cobra.Command {
 
 	// Add sub commands
 	command.AddCommand(auth.NewAuthCommand())
-	command.AddCommand(groundstation.GroundStationCmd)
-	command.AddCommand(satellite.SatelliteCmd)
+	command.AddCommand(groundstation.NewGroundStationCommand())
+	command.AddCommand(satellite.NewSatelliteCommand())
 
 	return command
 }

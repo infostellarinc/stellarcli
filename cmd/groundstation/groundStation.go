@@ -25,13 +25,15 @@ var (
 	gsShort = util.Normalize("Commands for working with ground stations.")
 )
 
-// gsCmd represents the satellite command
-var GroundStationCmd = &cobra.Command{
-	Use:     gsUsage,
-	Aliases: []string{"gs"},
-	Short:   gsShort,
-}
+// Create ground station command.
+func NewGroundStationCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:     gsUsage,
+		Aliases: []string{"gs"},
+		Short:   gsShort,
+	}
 
-func init() {
-	GroundStationCmd.AddCommand(listGSPlansCmd)
+	command.AddCommand(NewListPlansCommand())
+
+	return command
 }

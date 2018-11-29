@@ -42,35 +42,37 @@ var (
 	sendPort   uint16
 )
 
-// openStreamCmd represents the openStream command
-var openStreamCmd = &cobra.Command{
-	Use:   openStreamUse,
-	Short: openStreamShort,
-	Long:  openStreamLong,
-	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		recvAddr := listenHost + ":" + strconv.Itoa(int(listenPort))
-		sendAddr := sendHost + ":" + strconv.Itoa(int(sendPort))
+// Create open-stream command.
+func NewOpenStreamCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   openStreamUse,
+		Short: openStreamShort,
+		Long:  openStreamLong,
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			recvAddr := listenHost + ":" + strconv.Itoa(int(listenPort))
+			sendAddr := sendHost + ":" + strconv.Itoa(int(sendPort))
 
-		p, err := stream.StartUDPProxy(recvAddr, sendAddr, args[0])
-		if err != nil {
-			log.Fatalf("Could not open UDP proxy: %v\n", err)
-		}
-		defer p.Close()
+			p, err := stream.StartUDPProxy(recvAddr, sendAddr, args[0])
+			if err != nil {
+				log.Fatalf("Could not open UDP proxy: %v\n", err)
+			}
+			defer p.Close()
 
-		c := make(chan os.Signal)
+			c := make(chan os.Signal)
 
-		if err != nil {
-			log.Fatalf("Could not start UDP proxy: %v\n", err)
-		}
-		<-c
-	},
-}
+			if err != nil {
+				log.Fatalf("Could not start UDP proxy: %v\n", err)
+			}
+			<-c
+		},
+	}
 
-func init() {
-	openStreamCmd.Flags().StringVarP(&mode, "mode", "m", "udp", "The proxy mode to use. One of [udp].")
-	openStreamCmd.Flags().StringVar(&listenHost, "listen-host", "127.0.0.1", "The host to listen for packets on.")
-	openStreamCmd.Flags().Uint16Var(&listenPort, "listen-port", 6000, "The port to listen for packets on.")
-	openStreamCmd.Flags().StringVar(&sendHost, "send-host", "127.0.0.1", "The host to send packets to. Only used by udp.")
-	openStreamCmd.Flags().Uint16Var(&sendPort, "send-port", 6001, "The port to send packets on. Only used by udp.")
+	command.Flags().StringVarP(&mode, "mode", "m", "udp", "The proxy mode to use. One of [udp].")
+	command.Flags().StringVar(&listenHost, "listen-host", "127.0.0.1", "The host to listen for packets on.")
+	command.Flags().Uint16Var(&listenPort, "listen-port", 6000, "The port to listen for packets on.")
+	command.Flags().StringVar(&sendHost, "send-host", "127.0.0.1", "The host to send packets to. Only used by udp.")
+	command.Flags().Uint16Var(&sendPort, "send-port", 6001, "The port to send packets on. Only used by udp.")
+
+	return command
 }
