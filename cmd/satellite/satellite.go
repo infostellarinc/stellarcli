@@ -25,12 +25,14 @@ var (
 	satelliteShort = util.Normalize("Commands for working with satellites")
 )
 
-// satelliteCmd represents the satellite command
-var SatelliteCmd = &cobra.Command{
-	Use:   satelliteUse,
-	Short: satelliteShort,
-}
+// Create ground station command.
+func NewSatelliteCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   satelliteUse,
+		Short: satelliteShort,
+	}
 
-func init() {
-	SatelliteCmd.AddCommand(openStreamCmd)
+	command.AddCommand(NewOpenStreamCommand())
+
+	return command
 }

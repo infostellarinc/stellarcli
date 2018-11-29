@@ -28,13 +28,17 @@ var (
 		configuration directory.`)
 )
 
-// activateApiKeyCmd represents the activateApiKey command
-var activateApiKeyCmd = &cobra.Command{
-	Use:   activateApiKeyUse,
-	Short: activateApiKeyShort,
-	Long:  activateApiKeyLong,
-	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		auth.StoreCredentialsFile(args[0])
-	},
+// Create activate-api-key command.
+func NewActivateApiKeyCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   activateApiKeyUse,
+		Short: activateApiKeyShort,
+		Long:  activateApiKeyLong,
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			auth.StoreCredentialsFile(args[0])
+		},
+	}
+
+	return command
 }

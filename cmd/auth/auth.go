@@ -25,14 +25,14 @@ var (
 	authShort = util.Normalize("Commands for authenticating the stellar tool.")
 )
 
-// authCmd represents the auth command
+// Create auth command.
 func NewAuthCommand() *cobra.Command {
 	command := &cobra.Command{
 		Use:   authUse,
 		Short: authShort,
 	}
 
-	command.AddCommand(activateApiKeyCmd)
+	command.AddCommand(NewActivateApiKeyCommand())
 
 	return command
 }
