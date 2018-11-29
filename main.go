@@ -15,9 +15,15 @@
 package main
 
 import (
+	"log"
+
 	"github.com/infostellarinc/stellarcli/cmd"
 )
 
 func main() {
-	cmd.Execute()
+	// Execute root command.
+	cmd := cmd.NewRootCommand()
+	if err := cmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }

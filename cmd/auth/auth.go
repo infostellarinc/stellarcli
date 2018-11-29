@@ -26,11 +26,13 @@ var (
 )
 
 // authCmd represents the auth command
-var AuthCmd = &cobra.Command{
-	Use:   authUse,
-	Short: authShort,
-}
+func NewAuthCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   authUse,
+		Short: authShort,
+	}
 
-func init() {
-	AuthCmd.AddCommand(activateApiKeyCmd)
+	command.AddCommand(activateApiKeyCmd)
+
+	return command
 }

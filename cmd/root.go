@@ -15,17 +15,12 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/infostellarinc/stellarcli/cmd/auth"
 	"github.com/infostellarinc/stellarcli/cmd/groundstation"
 	"github.com/infostellarinc/stellarcli/cmd/satellite"
 	"github.com/infostellarinc/stellarcli/cmd/util"
-	"github.com/infostellarinc/stellarcli/pkg/config"
 )
 
 var (
@@ -39,44 +34,19 @@ var (
 		All commands should work after that.`)
 	stellarShort = util.Normalize("stellar is a command line tool for using the StellarStation API.")
 )
-var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   stellarUse,
-	Short: stellarShort,
-	Long:  stellarLong,
-}
-
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+func NewRootCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   stellarUse,
+		Short: stellarShort,
+		Long:  stellarLong,
 	}
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config/stellar/config.yaml)")
 
 	// Add sub commands
-	rootCmd.AddCommand(auth.AuthCmd)
-	rootCmd.AddCommand(groundstation.GroundStationCmd)
-	rootCmd.AddCommand(satellite.SatelliteCmd)
-}
+	command.AddCommand(auth.NewAuthCommand())
+	command.AddCommand(groundstation.GroundStationCmd)
+	command.AddCommand(satellite.SatelliteCmd)
 
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.AddConfigPath(config.GetConfigDir())
-		viper.SetConfigName("config")
-	}
-
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+	return command
 }
