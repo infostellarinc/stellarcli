@@ -19,7 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ring buffer", func() {
+var _ = Describe("Normalizer", func() {
 
 	It("trims", func() {
 		Expect(Normalize(" ")).To(Equal(""))
@@ -41,14 +41,19 @@ var _ = Describe("ring buffer", func() {
 		`))).To(Equal("sentence1\nsentence2\nsentence3"))
 	})
 
-	It("normalize", func() {
+	It("Normalize", func() {
 		actual := Normalize(`  sentence1
 			sentence2
 			sentence3
 		
 		`)
 
-		//assert.Equal(t, expected, actual)
 		Expect(Normalize(actual)).To(Equal("sentence1\nsentence2\nsentence3"))
+	})
+
+	It("ToLower", func() {
+		actual := Normalize("  HeLLO  ")
+
+		Expect(ToLower(actual)).To(Equal("hello"))
 	})
 })

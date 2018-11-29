@@ -15,27 +15,26 @@
 package plan
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
 
 	"github.com/infostellarinc/go-stellarstation/api/v1/groundstation"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
+	"github.com/infostellarinc/stellarcli/util/printer"
 )
 
-// Default format of time.Timestamp when converting it to a textual representation
-const defaultFormat = time.RFC3339
-
-// Default separator between columns
-const defaultSeparator = ","
+type ListOptions struct {
+	Printer   printer.Printer
+	ID        string
+	AOSAfter  *time.Time
+	AOSBefore *time.Time
+}
 
 // Headers of columns
-var headers = []string{
+var headers = []interface{}{
 	"PLAN_ID",
 	"AOS_TIME",
 	"LOS_TIME",
@@ -46,27 +45,26 @@ var headers = []string{
 }
 
 // ListPlans returns a list of plans for a given ground staion
-func ListPlans(id string, aosAfter, aosBefore time.Time) {
-
+func ListPlans(o *ListOptions) {
 	conn, err := apiclient.Dial()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
 
-	aosAfterTimestamp, err := ptypes.TimestampProto(aosAfter.UTC())
+	aosAfterTimestamp, err := ptypes.TimestampProto(o.AOSAfter.UTC())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	aosBeforeTimestamp, err := ptypes.TimestampProto(aosBefore.UTC())
+	aosBeforeTimestamp, err := ptypes.TimestampProto(o.AOSBefore.UTC())
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	client := groundstation.NewGroundStationServiceClient(conn)
 	request := &groundstation.ListPlansRequest{
-		GroundStationId: id,
+		GroundStationId: o.ID,
 		AosAfter:        aosAfterTimestamp,
 		AosBefore:       aosBeforeTimestamp,
 	}
@@ -76,13 +74,9 @@ func ListPlans(id string, aosAfter, aosBefore time.Time) {
 		log.Fatal(err)
 	}
 
-	// TODO(hoshir): Accepts time format from commandline options
-	layout := defaultFormat
+	defer o.Printer.Flush()
+	o.Printer.Write(headers)
 
-	// TODO(hoshir): Accepts a separator from commandline options
-	sep := defaultSeparator
-
-	fmt.Println(strings.Join(headers, sep))
 	for _, plan := range result.Plan {
 		aos, err := ptypes.Timestamp(plan.AosTime)
 		if err != nil {
@@ -94,15 +88,16 @@ func ListPlans(id string, aosAfter, aosBefore time.Time) {
 			log.Fatal(err)
 		}
 
-		var b bytes.Buffer
-		b.WriteString(fmt.Sprintf("%q%s", plan.PlanId, sep))
-		b.WriteString(fmt.Sprintf("%q%s", aos.Format(layout), sep))
-		b.WriteString(fmt.Sprintf("%q%s", los.Format(layout), sep))
-		b.WriteString(fmt.Sprintf("%v%s", plan.DownlinkRadioDevice.CenterFrequencyHz, sep))
-		b.WriteString(fmt.Sprintf("%v%s", plan.UplinkRadioDevice.CenterFrequencyHz, sep))
-		b.WriteString(fmt.Sprintf("%q%s", plan.Tle.Line_1, sep))
-		b.WriteString(fmt.Sprintf("%q%s", plan.Tle.Line_2, sep))
+		record := []interface{}{
+			plan.PlanId,
+			aos,
+			los,
+			plan.DownlinkRadioDevice.CenterFrequencyHz,
+			plan.UplinkRadioDevice.CenterFrequencyHz,
+			plan.Tle.Line_1,
+			plan.Tle.Line_2,
+		}
 
-		fmt.Println(b.String())
+		o.Printer.Write(record)
 	}
 }
