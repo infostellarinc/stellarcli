@@ -55,7 +55,6 @@ func (f *OutputFormatFlags) Validate() error {
 	return nil
 }
 
-
 // Complete flag values.
 // This function is required to implement Flags interface.
 func (f *OutputFormatFlags) Complete() error {
