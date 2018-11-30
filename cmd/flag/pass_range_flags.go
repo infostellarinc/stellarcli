@@ -64,7 +64,7 @@ func (f *PassRangeFlags) Validate() error {
 
 	// Validate and set AOSAfter when it is provided.
 	f.AOSAfter = time.Now()
-	if len(f.flgAOSAfter) > 0 {
+	if f.flgAOSAfter != "" {
 		aosAfter, err := util.ParseDateTime(f.flgAOSAfter)
 		if err != nil {
 			return err
@@ -74,7 +74,7 @@ func (f *PassRangeFlags) Validate() error {
 
 	// Validate and setAOSBefore when it is provided.
 	f.AOSBefore = f.AOSAfter.AddDate(0, 0, int(f.DurationInDays))
-	if len(f.flgAOSBefore) > 0 {
+	if f.flgAOSBefore != "" {
 		aosBefore, err := util.ParseDateTime(f.flgAOSBefore)
 		if err != nil {
 			return err
