@@ -47,7 +47,7 @@ func (f *OutputFormatFlags) AddFlags(cmd *cobra.Command) {
 
 // Validate flag values.
 func (f *OutputFormatFlags) Validate() error {
-	if !util.InArray(availableFormats, f.Format) {
+	if !util.Contains(availableFormats, f.Format) {
 		return fmt.Errorf("invalid output format: %v. Expected one of : %v", f.Format,
 			strings.Join(availableFormats, "|"))
 	}

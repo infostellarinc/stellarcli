@@ -14,12 +14,20 @@
 
 package util
 
-// Returns true if the given array contains the string.
-func Contains(a []string, s string) bool {
-	for _, v := range a {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("Array", func() {
+
+	It("Contains", func() {
+		a := []string{"a", "b", "c"}
+		Expect(Contains(a, "a")).To(BeTrue())
+		Expect(Contains(a, "hello")).To(BeFalse())
+		Expect(Contains(a, "")).To(BeFalse())
+
+		Expect(Contains([]string{}, "hello")).To(BeFalse())
+		Expect(Contains([]string{}, "")).To(BeFalse())
+	})
+})

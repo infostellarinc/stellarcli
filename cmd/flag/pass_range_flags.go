@@ -60,23 +60,43 @@ func (f *PassRangeFlags) Validate() error {
 		return fmt.Errorf("invalid value of duration: %v. Expected value: 1-%v", f.DurationInDays, f.MaxDurationInDays)
 	}
 
+	// Validate flgAOSAfter when it is provided.
+	if len(f.flgAOSAfter) > 0 {
+		aosAfter, err := time.Parse(timeFormat, f.flgAOSAfter)
+		if err != nil {
+			return err
+		}
+		f.AOSAfter = aosAfter
+	}
+
+	// Validate flgAOSBefore when it is provided.
+	if len(f.flgAOSBefore) > 0 {
+		aosBefore, err := time.Parse(timeFormat, f.flgAOSBefore)
+		if err != nil {
+			return err
+		}
+		f.AOSBefore = aosBefore
+	}
+
 	return nil
 }
 
 // Complete flag values.
 func (f *PassRangeFlags) Complete() error {
-	aosAfter, err := time.Parse(timeFormat, f.flgAOSAfter)
-	if err != nil {
-		aosAfter = time.Now()
+	// Set current time as AOSAfter when it is not provided.
+	if len(f.flgAOSAfter) == 0 {
+		f.AOSAfter = time.Now()
 	}
 
-	aosBefore, err := time.Parse(timeFormat, f.flgAOSBefore)
-	if err != nil {
-		aosBefore = aosAfter.AddDate(0, 0, int(f.DurationInDays))
+	// Set AOSAfter + DurationInDays as AOSBefore when it is not provided.
+	if len(f.flgAOSBefore) == 0 {
+		f.AOSBefore = f.AOSAfter.AddDate(0, 0, int(f.DurationInDays))
 	}
 
-	f.AOSAfter = aosAfter
-	f.AOSBefore = aosBefore
+	if f.AOSAfter.After(f.AOSBefore) {
+		return fmt.Errorf("aos-before (%v) must be after aos-after (%v)",
+			f.AOSAfter.Format(timeFormat), f.AOSBefore.Format(timeFormat))
+	}
 
 	return nil
 }
