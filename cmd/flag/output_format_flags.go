@@ -45,6 +45,7 @@ func (f *OutputFormatFlags) AddFlags(cmd *cobra.Command) {
 		"Output format. One of: "+strings.Join(availableFormats, "|"))
 }
 
+
 // Validate flag values.
 func (f *OutputFormatFlags) Validate() error {
 	if !util.InArray(availableFormats, f.Format) {
@@ -52,6 +53,14 @@ func (f *OutputFormatFlags) Validate() error {
 			strings.Join(availableFormats, "|"))
 	}
 
+	return nil
+}
+
+
+// Complete flag values.
+// This function is required to implement Flags interface.
+func (f *OutputFormatFlags) Complete() error {
+	// Nothing to do for PassRangeFlags.
 	return nil
 }
 

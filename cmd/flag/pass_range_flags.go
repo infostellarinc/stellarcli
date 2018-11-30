@@ -64,7 +64,7 @@ func (f *PassRangeFlags) Validate() error {
 }
 
 // Complete flag values.
-func (f *PassRangeFlags) Complete() {
+func (f *PassRangeFlags) Complete() error {
 	aosAfter, err := time.Parse(timeFormat, f.flgAOSAfter)
 	if err != nil {
 		aosAfter = time.Now()
@@ -77,6 +77,8 @@ func (f *PassRangeFlags) Complete() {
 
 	f.AOSAfter = aosAfter
 	f.AOSBefore = aosBefore
+
+	return nil
 }
 
 // Create a new PassRangeFlags with default values set.
