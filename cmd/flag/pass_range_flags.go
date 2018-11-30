@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/infostellarinc/stellarcli/cmd/util"
 )
 
 var (
@@ -60,37 +62,24 @@ func (f *PassRangeFlags) Validate() error {
 		return fmt.Errorf("invalid value of duration: %v. Expected value: 1-%v", f.DurationInDays, f.MaxDurationInDays)
 	}
 
-	// Validate flgAOSAfter when it is provided.
+	// Validate and set AOSAfter when it is provided.
+	f.AOSAfter = time.Now()
 	if len(f.flgAOSAfter) > 0 {
-		aosAfter, err := time.Parse(timeFormat, f.flgAOSAfter)
+		aosAfter, err := util.ParseDateTime(f.flgAOSAfter)
 		if err != nil {
 			return err
 		}
 		f.AOSAfter = aosAfter
 	}
 
-	// Validate flgAOSBefore when it is provided.
+	// Validate and setAOSBefore when it is provided.
+	f.AOSBefore = f.AOSAfter.AddDate(0, 0, int(f.DurationInDays))
 	if len(f.flgAOSBefore) > 0 {
-		aosBefore, err := time.Parse(timeFormat, f.flgAOSBefore)
+		aosBefore, err := util.ParseDateTime(f.flgAOSBefore)
 		if err != nil {
 			return err
 		}
 		f.AOSBefore = aosBefore
-	}
-
-	return nil
-}
-
-// Complete flag values.
-func (f *PassRangeFlags) Complete() error {
-	// Set current time as AOSAfter when it is not provided.
-	if len(f.flgAOSAfter) == 0 {
-		f.AOSAfter = time.Now()
-	}
-
-	// Set AOSAfter + DurationInDays as AOSBefore when it is not provided.
-	if len(f.flgAOSBefore) == 0 {
-		f.AOSBefore = f.AOSAfter.AddDate(0, 0, int(f.DurationInDays))
 	}
 
 	if f.AOSAfter.After(f.AOSBefore) {

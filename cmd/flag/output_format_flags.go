@@ -55,13 +55,6 @@ func (f *OutputFormatFlags) Validate() error {
 	return nil
 }
 
-// Complete flag values.
-// This function is required to implement Flags interface.
-func (f *OutputFormatFlags) Complete() error {
-	// Nothing to do for PassRangeFlags.
-	return nil
-}
-
 // Return a Printer corresponding to the output format.
 func (f *OutputFormatFlags) ToPrinter() printer.Printer {
 	format := util.ToLower(f.Format)

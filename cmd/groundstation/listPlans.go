@@ -16,8 +16,6 @@ package groundstation
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/spf13/cobra"
 
 	"github.com/infostellarinc/stellarcli/cmd/flag"
@@ -37,10 +35,7 @@ var (
 func NewListPlansCommand() *cobra.Command {
 	passRangeFlags := flag.NewPassRangeFlags()
 	outputFormatFlags := flag.NewOutputFormatFlags()
-
-	var flags []flag.Flags
-	flags = append(flags, passRangeFlags)
-	flags = append(flags, outputFormatFlags)
+	flags := flag.NewFlagSet(passRangeFlags, outputFormatFlags)
 
 	command := &cobra.Command{
 		Use:   listPlansUse,
@@ -51,21 +46,13 @@ func NewListPlansCommand() *cobra.Command {
 				return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
 			}
 
-			for _, f := range flags {
-				if err := f.Validate(); err != nil {
-					return err
-				}
+			if err := flags.ValidateAll(); err != nil {
+				return err
 			}
 
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			for _, f := range flags {
-				if err := f.Complete(); err != nil {
-					log.Fatal(err)
-				}
-			}
-
 			p := outputFormatFlags.ToPrinter()
 			o := &plan.ListOptions{
 				Printer:   p,
@@ -79,9 +66,7 @@ func NewListPlansCommand() *cobra.Command {
 	}
 
 	// Add flags to the command.
-	for _, f := range flags {
-		f.AddFlags(command)
-	}
+	flags.AddAllFlags(command)
 
 	return command
 }

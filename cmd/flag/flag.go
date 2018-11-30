@@ -16,14 +16,11 @@ package flag
 
 import "github.com/spf13/cobra"
 
-// Flags is the interface that handles command line options.
-type Flags interface {
+// Flag is the interface that handles command line options.
+type Flag interface {
 	// Add flags to the command.
 	AddFlags(cmd *cobra.Command)
 
 	// Validate values set to flags.
 	Validate() error
-
-	// Complete flag values.
-	Complete() error
 }
