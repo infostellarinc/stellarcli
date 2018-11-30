@@ -78,8 +78,10 @@ func NewListPlansCommand() *cobra.Command {
 		},
 	}
 
-	passRangeFlags.AddFlags(command)
-	outputFormatFlags.AddFlags(command)
+	// Add flags to the command.
+	for _, f := range flags {
+		f.AddFlags(command)
+	}
 
 	return command
 }
