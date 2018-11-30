@@ -45,7 +45,6 @@ func (f *OutputFormatFlags) AddFlags(cmd *cobra.Command) {
 		"Output format. One of: "+strings.Join(availableFormats, "|"))
 }
 
-
 // Validate flag values.
 func (f *OutputFormatFlags) Validate() error {
 	if !util.InArray(availableFormats, f.Format) {
