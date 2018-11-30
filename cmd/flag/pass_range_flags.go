@@ -28,7 +28,7 @@ var (
 	durationInDays uint8 = 31
 	// Maximum value of duration in days.
 	maxDurationInDays uint8 = 31
-	// Time format used to parse "after" and "before" flags.
+	// Time format used to format times in help and error message.
 	timeFormat = "2006-01-02 15:04:05"
 )
 
