@@ -50,3 +50,8 @@ func trim(s string) string {
 func Normalize(s string) string {
 	return trim(applyHeredoc(s))
 }
+
+// Apply strings.ToLower after trimming spaces.
+func ToLower(s string) string {
+	return strings.ToLower(trim(s))
+}
