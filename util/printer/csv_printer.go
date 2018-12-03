@@ -26,7 +26,7 @@ import (
 // A Printer which output values as a CSV format.
 type CSVPrinter struct {
 	// Options of CSV format.
-	Options *CSVPrinterOptions
+	Options CSVPrinterOptions
 	// A writer to buffer values in a line.
 	writer *bufio.Writer
 }
@@ -61,7 +61,7 @@ const (
 )
 
 // Create a new CSVPrinter
-func NewCSVPrinter(o *CSVPrinterOptions) *CSVPrinter {
+func NewCSVPrinter(o CSVPrinterOptions) *CSVPrinter {
 	writer := bufio.NewWriter(o.Out)
 
 	printer := &CSVPrinter{Options: o, writer: writer}
@@ -113,8 +113,8 @@ func (p *CSVPrinter) Write(r []interface{}) {
 }
 
 // Create a CSVPrinterOptions with default values set.
-func NewCSVPrinterOptions(output io.Writer) *CSVPrinterOptions {
-	return &CSVPrinterOptions{
+func NewCSVPrinterOptions(output io.Writer) CSVPrinterOptions {
+	return CSVPrinterOptions{
 		Out:         output,
 		CRLF:        crlf,
 		DateFormat:  dateFormat,

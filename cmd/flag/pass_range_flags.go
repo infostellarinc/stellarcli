@@ -69,7 +69,7 @@ func (f *PassRangeFlags) Validate() error {
 		if err != nil {
 			return err
 		}
-		f.AOSAfter = aosAfter
+		f.AOSAfter = *aosAfter
 	}
 
 	// Validate and setAOSBefore when it is provided.
@@ -79,7 +79,7 @@ func (f *PassRangeFlags) Validate() error {
 		if err != nil {
 			return err
 		}
-		f.AOSBefore = aosBefore
+		f.AOSBefore = *aosBefore
 	}
 
 	if f.AOSAfter.After(f.AOSBefore) {
