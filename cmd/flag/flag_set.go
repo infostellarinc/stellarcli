@@ -24,9 +24,8 @@ type FlagSet struct {
 // Create a new flag collection.
 func NewFlagSet(args ...Flag) *FlagSet {
 	s := &FlagSet{}
-	for _, f := range args {
-		s.flags = append(s.flags, f)
-	}
+	s.flags = append(s.flags, args...)
+
 	return s
 }
 

@@ -35,14 +35,14 @@ var (
 )
 
 // Parse the given time and return time.Time.
-func ParseDateTime(dateStr string) (time.Time, error) {
+func ParseDateTime(dateStr string) (*time.Time, error) {
 	for _, f := range acceptableTimeFormats {
 		parsedTime, err := time.Parse(f, dateStr)
 		if err == nil {
-			return parsedTime, nil
+			return &parsedTime, nil
 		}
 	}
-	return time.Time{},
+	return &time.Time{},
 		fmt.Errorf("failed to parse the date %v. Date format must to be one of: \n%s", dateStr,
 			strings.Join(acceptableTimeFormats, ", "))
 }
