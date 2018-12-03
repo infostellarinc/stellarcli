@@ -54,7 +54,7 @@ const (
 	padding = 2
 	// ASCII char used for padding.
 	padChar = ' '
-	//Width of tab characters (equivalent number of spaces)
+	// Width of tab characters (equivalent number of spaces)
 	tabWidth = 4
 
 	// Tab char used in the input.
