@@ -28,9 +28,9 @@ import (
 
 var (
 	// Supported output formats.
-	availableFormats = []string{"csv"}
+	availableFormats = []string{"csv", "wide"}
 	// Default output format.
-	defaultOutputFormat = "csv"
+	defaultOutputFormat = "wide"
 	// Default output.
 	defaultOutput = os.Stdout
 )
@@ -60,6 +60,9 @@ func (f *OutputFormatFlags) ToPrinter() printer.Printer {
 	format := util.ToLower(f.Format)
 
 	switch format {
+	case "wide":
+		o := printer.NewWidePrinterOptions(defaultOutput)
+		return printer.NewWidePrinter(o)
 	case "csv":
 		o := printer.NewCSVPrinterOptions(defaultOutput)
 		return printer.NewCSVPrinter(o)
