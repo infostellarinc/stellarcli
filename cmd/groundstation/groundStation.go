@@ -34,6 +34,7 @@ func NewGroundStationCommand() *cobra.Command {
 	}
 
 	command.AddCommand(NewAddUWCommand())
+	command.AddCommand(NewDeleteUWCommand())
 	command.AddCommand(NewListPlansCommand())
 	command.AddCommand(NewListUWCommand())
 
