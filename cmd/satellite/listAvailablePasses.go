@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	listAvailablePassesUse   = util.Normalize("list-available-passes [Satellite ID]")
+	listAvailablePassesUse   = util.Normalize("list-passes [Satellite ID]")
 	listAvailablePassesShort = util.Normalize("Lists available passes of a satellite.")
 	listAvailablePassesLong  = util.Normalize("Lists available passes of a satellite.")
 )
