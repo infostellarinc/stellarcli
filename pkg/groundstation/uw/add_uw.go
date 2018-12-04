@@ -65,6 +65,6 @@ func AddUW(o *AddUWOptions) {
 	}
 
 	defer o.Printer.Flush()
-	message := fmt.Sprintf("Succeeded to add the unavailability uw as: %s", result.WindowId)
+	message := fmt.Sprintf("Succeeded to add the unavailability window as: %s", result.WindowId)
 	o.Printer.Write([]interface{}{message})
 }
