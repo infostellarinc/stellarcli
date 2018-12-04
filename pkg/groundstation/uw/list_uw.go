@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plan
+package uw
 
 import (
 	"context"
@@ -26,50 +26,46 @@ import (
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 
-type ListOptions struct {
+type ListUWOptions struct {
 	Printer   printer.Printer
 	ID        string
-	AOSAfter  *time.Time
-	AOSBefore *time.Time
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 // Headers of columns
 var headers = []interface{}{
-	"PLAN_ID",
-	"AOS_TIME",
-	"LOS_TIME",
-	"DOWNLINK_CENTER_FREQUENCY_HZ",
-	"UPLINK_CENTER_FREQUENCY_HZ",
-	"TLE_LINE__1",
-	"TLE_LINE__2",
+	"WINDOW_ID",
+	"START_TIME",
+	"END_TIME",
 }
 
-// ListPlans returns a list of plans for a given ground staion
-func ListPlans(o *ListOptions) {
+// ListUW returns a list of unavailability windows for a given ground station.
+func ListUW(o *ListUWOptions) {
 	conn, err := apiclient.Dial()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
 
-	aosAfterTimestamp, err := ptypes.TimestampProto(o.AOSAfter.UTC())
+	startTimeTimestamp, err := ptypes.TimestampProto(o.StartTime.UTC())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	aosBeforeTimestamp, err := ptypes.TimestampProto(o.AOSBefore.UTC())
+	endTimeTimestamp, err := ptypes.TimestampProto(o.EndTime.UTC())
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	client := groundstation.NewGroundStationServiceClient(conn)
-	request := &groundstation.ListPlansRequest{
+	request := &groundstation.ListUnavailabilityWindowsRequest{
 		GroundStationId: o.ID,
-		AosAfter:        aosAfterTimestamp,
-		AosBefore:       aosBeforeTimestamp,
+		StartTime:       startTimeTimestamp,
+		EndTime:         endTimeTimestamp,
 	}
 
-	result, err := client.ListPlans(context.Background(), request)
+	result, err := client.ListUnavailabilityWindows(context.Background(), request)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -77,25 +73,21 @@ func ListPlans(o *ListOptions) {
 	defer o.Printer.Flush()
 	o.Printer.Write(headers)
 
-	for _, plan := range result.Plan {
-		aos, err := ptypes.Timestamp(plan.AosTime)
+	for _, window := range result.Window {
+		startTime, err := ptypes.Timestamp(window.StartTime)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		los, err := ptypes.Timestamp(plan.LosTime)
+		endTime, err := ptypes.Timestamp(window.EndTime)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		record := []interface{}{
-			plan.PlanId,
-			aos,
-			los,
-			plan.DownlinkRadioDevice.CenterFrequencyHz,
-			plan.UplinkRadioDevice.CenterFrequencyHz,
-			plan.Tle.Line_1,
-			plan.Tle.Line_2,
+			window.WindowId,
+			startTime,
+			endTime,
 		}
 
 		o.Printer.Write(record)

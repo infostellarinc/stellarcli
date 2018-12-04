@@ -33,7 +33,9 @@ func NewGroundStationCommand() *cobra.Command {
 		Short:   gsShort,
 	}
 
+	command.AddCommand(NewAddUWCommand())
 	command.AddCommand(NewListPlansCommand())
+	command.AddCommand(NewListUWCommand())
 
 	return command
 }
