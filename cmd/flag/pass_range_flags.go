@@ -47,10 +47,10 @@ type PassRangeFlags struct {
 // Add flags to the command.
 func (f *PassRangeFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.flgAOSAfter, "aos-after", "a", "",
-		`The start time (UTC) of the range of plans to list (inclusive). Example: "2006-01-02 15:04:00 (default current time"`)
+		`The start time (UTC) of the range of plans to list (inclusive). Example: "2006-01-02 15:04:00" (default current time)`)
 	cmd.Flags().StringVarP(&f.flgAOSBefore, "aos-before", "b", "",
 		`The end time (UTC) of the range of plans to list (exclusive). Example: "2006-01-02 15:14:00" `+
-			fmt.Sprintf("(default aos-after + %d days", f.DurationInDays))
+			fmt.Sprintf("(default aos-after + %d days)", f.DurationInDays))
 	cmd.Flags().Uint8VarP(&f.DurationInDays, "duration", "d", f.DurationInDays,
 		fmt.Sprintf("Duration of the range of plans to list (1-%v), in days. Duration will be ignored when aos-before is specified.",
 			f.MaxDurationInDays))
