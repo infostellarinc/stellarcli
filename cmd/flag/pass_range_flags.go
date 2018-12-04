@@ -25,9 +25,9 @@ import (
 
 var (
 	// Default time range used when end time is not specified.
-	durationInDays uint8 = 31
+	passRangeDurationInDays uint8 = 31
 	// Maximum value of duration in days.
-	maxDurationInDays uint8 = 31
+	passRangeMaxDurationInDays uint8 = 31
 	// Time format used to format times in help and error message.
 	timeFormat = "2006-01-02 15:04:05"
 )
@@ -93,7 +93,7 @@ func (f *PassRangeFlags) Validate() error {
 // Create a new PassRangeFlags with default values set.
 func NewPassRangeFlags() *PassRangeFlags {
 	return &PassRangeFlags{
-		DurationInDays:    durationInDays,
-		MaxDurationInDays: maxDurationInDays,
+		DurationInDays:    passRangeDurationInDays,
+		MaxDurationInDays: passRangeMaxDurationInDays,
 	}
 }
