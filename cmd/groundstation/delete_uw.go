@@ -16,8 +16,6 @@ package groundstation
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/spf13/cobra"
 
 	"github.com/infostellarinc/stellarcli/cmd/flag"
@@ -26,25 +24,23 @@ import (
 )
 
 var (
-	addUWUse   = util.Normalize("add-uw [Ground Station ID] [Start Time] [End Time]")
-	addUWShort = util.Normalize("Adds unavailability windows on a ground station.")
-	addUWLong  = util.Normalize(
-		`Adds unavailability windows on a ground station. Unavailability windows between the given time range
-		are returned.`)
+	deleteUWUse   = util.Normalize("delete-uw [Window ID]")
+	deleteUWShort = util.Normalize("Deletes unavailability windows on a ground station.")
+	deleteUWLong  = util.Normalize("Deletes an unavailability windows on a ground station.")
 )
 
-// Create add-uw command.
-func NewAddUWCommand() *cobra.Command {
+// Create delete-uw command.
+func NewDeleteUWCommand() *cobra.Command {
 	outputFormatFlags := flag.NewOutputFormatFlags()
 	flags := flag.NewFlagSet(outputFormatFlags)
 
 	command := &cobra.Command{
-		Use:   addUWUse,
-		Short: addUWShort,
-		Long:  addUWLong,
+		Use:   deleteUWUse,
+		Short: deleteUWShort,
+		Long:  deleteUWLong,
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 3 {
-				return fmt.Errorf("accepts 3 arg(s), received %d", len(args))
+			if len(args) != 1 {
+				return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
 			}
 
 			if err := flags.ValidateAll(); err != nil {
@@ -56,24 +52,12 @@ func NewAddUWCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			p := outputFormatFlags.ToPrinter()
 
-			startTime, err := util.ParseDateTime(args[1])
-			if err != nil {
-				log.Fatal(err)
+			o := &uw.DeleteUWOptions{
+				Printer:  p,
+				WindowID: args[0],
 			}
 
-			endTime, err := util.ParseDateTime(args[2])
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			o := &uw.AddUWOptions{
-				Printer:   p,
-				ID:        args[0],
-				StartTime: startTime,
-				EndTime:   endTime,
-			}
-
-			uw.AddUW(o)
+			uw.DeleteUW(o)
 		},
 	}
 
