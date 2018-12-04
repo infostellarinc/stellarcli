@@ -49,7 +49,7 @@ type ListOptions struct {
 	AOSBefore *time.Time
 }
 
-// ListPlans returns a list of plans for a given ground station.
+// ListPlans returns a list of plans for a given satellite.
 func ListPlans(o *ListOptions) {
 	conn, err := apiclient.Dial()
 	if err != nil {
