@@ -28,10 +28,13 @@ var (
 // Create ground station command.
 func NewSatelliteCommand() *cobra.Command {
 	command := &cobra.Command{
-		Use:   satelliteUse,
-		Short: satelliteShort,
+		Use:     satelliteUse,
+		Aliases: []string{"sat"},
+		Short:   satelliteShort,
 	}
 
+	command.AddCommand(NewListAvailablePassesCommand())
+	command.AddCommand(NewListPlansCommand())
 	command.AddCommand(NewOpenStreamCommand())
 
 	return command
