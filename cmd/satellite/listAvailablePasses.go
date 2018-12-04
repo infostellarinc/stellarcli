@@ -16,11 +16,12 @@ package satellite
 
 import (
 	"fmt"
-	"github.com/infostellarinc/stellarcli/pkg/satellite/pass"
+
+	"github.com/spf13/cobra"
 
 	"github.com/infostellarinc/stellarcli/cmd/flag"
 	"github.com/infostellarinc/stellarcli/cmd/util"
-	"github.com/spf13/cobra"
+	"github.com/infostellarinc/stellarcli/pkg/satellite/pass"
 )
 
 var (

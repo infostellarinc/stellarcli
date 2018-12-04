@@ -16,8 +16,9 @@ package pass
 
 import (
 	"context"
-	"github.com/golang/protobuf/ptypes"
 	"log"
+
+	"github.com/golang/protobuf/ptypes"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
