@@ -33,7 +33,9 @@ func NewSatelliteCommand() *cobra.Command {
 		Short:   satelliteShort,
 	}
 
+	command.AddCommand(NewAddTLECommand())
 	command.AddCommand(NewCancelPlanCommand())
+	command.AddCommand(NewGetTLECommand())
 	command.AddCommand(NewListAvailablePassesCommand())
 	command.AddCommand(NewListPlansCommand())
 	command.AddCommand(NewOpenStreamCommand())
