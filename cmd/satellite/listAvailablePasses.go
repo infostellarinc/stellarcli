@@ -32,7 +32,8 @@ var (
 
 func NewListAvailablePassesCommand() *cobra.Command {
 	outputFormatFlags := flag.NewOutputFormatFlags()
-	flags := flag.NewFlagSet(outputFormatFlags)
+	minElevationFlags := flag.NewMinElevationFlags()
+	flags := flag.NewFlagSet(outputFormatFlags, minElevationFlags)
 
 	command := &cobra.Command{
 		Use:   listAvailablePassesUse,
@@ -52,8 +53,9 @@ func NewListAvailablePassesCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			p := outputFormatFlags.ToPrinter()
 			o := &pass.ListAvailablePassesOptions{
-				Printer: p,
-				ID:      args[0],
+				Printer:      p,
+				ID:           args[0],
+				MinElevation: minElevationFlags.MinElevation,
 			}
 
 			pass.ListAvailablePasses(o)

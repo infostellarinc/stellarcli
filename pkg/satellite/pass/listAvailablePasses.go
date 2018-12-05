@@ -40,8 +40,9 @@ var headers = []interface{}{
 }
 
 type ListAvailablePassesOptions struct {
-	Printer printer.Printer
-	ID      string
+	Printer      printer.Printer
+	ID           string
+	MinElevation float64
 }
 
 // ListAvailablePasses returns a list of passes available for a given satellite.
@@ -63,34 +64,36 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 	defer o.Printer.Flush()
 	o.Printer.Write(headers)
 
-	for _, plan := range result.Pass {
-		aos, err := ptypes.Timestamp(plan.AosTime)
+	for _, pass := range result.Pass {
+		aos, err := ptypes.Timestamp(pass.AosTime)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		los, err := ptypes.Timestamp(plan.LosTime)
+		los, err := ptypes.Timestamp(pass.LosTime)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		maxElevationTime, err := ptypes.Timestamp(plan.MaxElevationTime)
+		maxElevationTime, err := ptypes.Timestamp(pass.MaxElevationTime)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		record := []interface{}{
-			plan.ReservationToken,
-			aos,
-			los,
-			plan.GroundStationLatitude,
-			plan.GroundStationLongitude,
-			plan.GroundStationCountryCode,
-			plan.MaxElevationDegrees,
-			maxElevationTime,
-			plan.DownlinkCenterFrequencyHz,
-			plan.UplinkCenterFrequencyHz,
+		if pass.MaxElevationDegrees > o.MinElevation {
+			record := []interface{}{
+				pass.ReservationToken,
+				aos,
+				los,
+				pass.GroundStationLatitude,
+				pass.GroundStationLongitude,
+				pass.GroundStationCountryCode,
+				pass.MaxElevationDegrees,
+				maxElevationTime,
+				pass.DownlinkCenterFrequencyHz,
+				pass.UplinkCenterFrequencyHz,
+			}
+			o.Printer.Write(record)
 		}
-		o.Printer.Write(record)
 	}
 }
