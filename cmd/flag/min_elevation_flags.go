@@ -38,7 +38,7 @@ func (f *MinElevationFlags) AddFlags(cmd *cobra.Command) {
 // Validate flag values.
 func (f *MinElevationFlags) Validate() error {
 	if f.MinElevation < 0 || f.MinElevation > 90 {
-		return fmt.Errorf("invalid value of min elevation: %v. Expected value: 0-90")
+		return fmt.Errorf("invalid value of min elevation: %v. Expected value: 0-90", f.MinElevation)
 	}
 
 	return nil
