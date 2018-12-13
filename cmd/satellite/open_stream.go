@@ -70,9 +70,9 @@ func NewOpenStreamCommand() *cobra.Command {
 
 	command.Flags().StringVarP(&mode, "mode", "m", "udp", "The proxy mode to use. One of [udp].")
 	command.Flags().StringVar(&listenHost, "listen-host", "127.0.0.1", "The host to listen for packets on.")
-	command.Flags().Uint16Var(&listenPort, "listen-port", 6000, "Stellar CLI listens packets to be sent to a satellite on this port.")
+	command.Flags().Uint16Var(&listenPort, "listen-port", 6000, "The port stellar listens for packets on. Packets on this port will be sent to the satellite.")
 	command.Flags().StringVar(&sendHost, "send-host", "127.0.0.1", "The host to send packets to. Only used by udp.")
-	command.Flags().Uint16Var(&sendPort, "send-port", 6001, "Stellar CLI send packets received from a satellite to this port.")
+	command.Flags().Uint16Var(&sendPort, "send-port", 6001, "The port stellar sends packets to. Packets from the satellite will be sent to this port.")
 
 	return command
 }
