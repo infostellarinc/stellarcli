@@ -108,8 +108,12 @@ func (ss *satelliteStream) recvLoop() {
 			} else {
 				log.Fatalf("Error reading from API stream: %v\n", err)
 			}
-		} else {
-			ss.streamId = res.StreamId
+		}
+
+		ss.streamId = res.StreamId
+
+		switch res.Response.(type) {
+		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			payload := res.GetReceiveTelemetryResponse().Telemetry.Data
 			ss.recvChan <- payload
 		}
