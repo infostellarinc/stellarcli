@@ -108,8 +108,12 @@ func (ss *satelliteStream) recvLoop() {
 			} else {
 				log.Fatalf("Error reading from API stream: %v\n", err)
 			}
-		} else {
-			ss.streamId = res.StreamId
+		}
+
+		ss.streamId = res.StreamId
+
+		// Telemetry data can be nil when a StreamEvent comes.
+		if res.GetReceiveTelemetryResponse() != nil {
 			payload := res.GetReceiveTelemetryResponse().Telemetry.Data
 			ss.recvChan <- payload
 		}
