@@ -112,8 +112,8 @@ func (ss *satelliteStream) recvLoop() {
 
 		ss.streamId = res.StreamId
 
-		// Telemetry data can be nil when a StreamEvent comes.
-		if res.GetReceiveTelemetryResponse() != nil {
+		switch res.Response.(type) {
+		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			payload := res.GetReceiveTelemetryResponse().Telemetry.Data
 			ss.recvChan <- payload
 		}
