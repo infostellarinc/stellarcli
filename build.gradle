@@ -44,6 +44,7 @@ githubRelease {
     owner = 'infostellarinc'
     repo = 'stellarcli'
     releaseAssets = fileTree('build/zip')
+    allowUploadToExisting = true
 }
 
 tasks.githubRelease.dependsOn tasks.build
