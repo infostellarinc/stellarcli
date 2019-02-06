@@ -20,9 +20,9 @@ import (
 	"log"
 	"sync/atomic"
 
-	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"google.golang.org/grpc"
 
+	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 )
 
@@ -30,6 +30,10 @@ const (
 	OPEN   uint32 = 0
 	CLOSED uint32 = 1
 )
+
+type SatelliteStreamOptions struct {
+	SatelliteID string
+}
 
 type SatelliteStream interface {
 	Send(payload []byte) error
@@ -50,9 +54,9 @@ type satelliteStream struct {
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
-func OpenSatelliteStream(satelliteId string, recvChan chan []byte) (SatelliteStream, error) {
+func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan []byte) (SatelliteStream, error) {
 	s := &satelliteStream{
-		satelliteId:        satelliteId,
+		satelliteId:        o.SatelliteID,
 		streamId:           "",
 		recvChan:           recvChan,
 		state:              OPEN,

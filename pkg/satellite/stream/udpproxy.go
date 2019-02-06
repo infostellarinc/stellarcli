@@ -15,18 +15,13 @@
 package stream
 
 import (
-	"io"
 	"log"
 	"net"
 	"sync"
 	"time"
 )
 
-type UDPProxy interface {
-	io.Closer
-}
-
-type udpProxy struct {
+type UDPProxy struct {
 	recvConn net.PacketConn
 	sendConn net.Conn
 	stream   SatelliteStream
@@ -40,33 +35,31 @@ type udpProxy struct {
 	closeWg sync.WaitGroup
 }
 
-// StartUDPProxy creates a UDPProxy that listens for packets to send to the satellite and send back
-// received packets.
-func StartUDPProxy(recvAddr string, sendAddr string, satelliteId string) (UDPProxy, error) {
-	rc, err := net.ListenPacket("udp", recvAddr)
-	if err != nil {
-		return nil, err
-	}
+type UDPProxyOptions struct {
+	RecvAddr string
+	SendAddr string
+}
 
-	sc, err := net.Dial("udp", sendAddr)
+// Create a UDPProxy.
+func NewUDPProxy(o *UDPProxyOptions) (Proxy, error) {
+	rc, err := net.ListenPacket("udp", o.RecvAddr)
 	if err != nil {
 		rc.Close()
 		return nil, err
 	}
 
-	sendChan := make(chan []byte)
-
-	stream, err := OpenSatelliteStream(satelliteId, sendChan)
+	sc, err := net.Dial("udp", o.SendAddr)
 	if err != nil {
 		rc.Close()
 		sc.Close()
 		return nil, err
 	}
 
-	p := &udpProxy{
+	sendChan := make(chan []byte)
+
+	p := &UDPProxy{
 		recvConn:      rc,
 		sendConn:      sc,
-		stream:        stream,
 		sendChan:      sendChan,
 		recvBuf:       make([]byte, 1024*1024),
 		sendCloseChan: make(chan struct{}),
@@ -74,14 +67,29 @@ func StartUDPProxy(recvAddr string, sendAddr string, satelliteId string) (UDPPro
 		closeWg:       sync.WaitGroup{},
 	}
 
-	p.start()
-
 	return p, nil
 }
 
-// Close closes the proxy.
-func (p *udpProxy) Close() error {
-	p.stream.Close()
+// Start listening for packets to send to the satellite and sending back received packets.
+func (p *UDPProxy) Start(o *SatelliteStreamOptions) error {
+
+	var err error
+	p.stream, err = OpenSatelliteStream(o, p.sendChan)
+	if err != nil {
+		return err
+	}
+
+	p.closeWg.Add(2)
+	go p.sendLoop()
+	go p.recvLoop()
+
+	return nil
+}
+
+// Close the proxy.
+func (p *UDPProxy) Close() error {
+
+	close(p.sendChan)
 
 	close(p.recvCloseChan)
 	close(p.sendCloseChan)
@@ -90,11 +98,12 @@ func (p *udpProxy) Close() error {
 
 	p.sendConn.Close()
 	p.recvConn.Close()
+	p.stream.Close()
 
 	return nil
 }
 
-func (p *udpProxy) recvLoop() {
+func (p *UDPProxy) recvLoop() {
 	defer p.closeWg.Done()
 	for {
 		select {
@@ -114,7 +123,7 @@ func (p *udpProxy) recvLoop() {
 	}
 }
 
-func (p *udpProxy) sendLoop() {
+func (p *UDPProxy) sendLoop() {
 	defer p.closeWg.Done()
 	for {
 		select {
@@ -124,10 +133,4 @@ func (p *udpProxy) sendLoop() {
 			return
 		}
 	}
-}
-
-func (p *udpProxy) start() {
-	p.closeWg.Add(2)
-	go p.sendLoop()
-	go p.recvLoop()
 }

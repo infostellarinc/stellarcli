@@ -15,12 +15,13 @@
 package satellite
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 
+	"github.com/infostellarinc/stellarcli/cmd/flag"
 	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/satellite/stream"
 )
@@ -34,45 +35,49 @@ var (
 		the satellite and any incoming packets will be returned as is.`)
 )
 
-var (
-	mode       string
-	listenHost string
-	listenPort uint16
-	sendHost   string
-	sendPort   uint16
-)
-
 // Create open-stream command.
 func NewOpenStreamCommand() *cobra.Command {
+	openStreamFlags := flag.NewOpenStreamFlags()
+	flags := flag.NewFlagSet(openStreamFlags)
+
 	command := &cobra.Command{
 		Use:   openStreamUse,
 		Short: openStreamShort,
 		Long:  openStreamLong,
-		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			recvAddr := listenHost + ":" + strconv.Itoa(int(listenPort))
-			sendAddr := sendHost + ":" + strconv.Itoa(int(sendPort))
-
-			p, err := stream.StartUDPProxy(recvAddr, sendAddr, args[0])
-			if err != nil {
-				log.Fatalf("Could not open UDP proxy: %v\n", err)
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
 			}
-			defer p.Close()
+
+			if err := flags.ValidateAll(); err != nil {
+				return err
+			}
+
+			return nil
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			proxy := openStreamFlags.ToProxy()
+			defer proxy.Close()
+
+			o := &stream.SatelliteStreamOptions{
+				SatelliteID: args[0],
+			}
 
 			c := make(chan os.Signal)
+			defer close(c)
 
+			err := proxy.Start(o)
 			if err != nil {
-				log.Fatalf("Could not start UDP proxy: %v\n", err)
+				log.Fatalf("Could not start proxy: %v\n", err)
 			}
+
 			<-c
+
 		},
 	}
 
-	command.Flags().StringVarP(&mode, "mode", "m", "udp", "The proxy mode to use. One of [udp].")
-	command.Flags().StringVar(&listenHost, "listen-host", "127.0.0.1", "The host to listen for packets on.")
-	command.Flags().Uint16Var(&listenPort, "listen-port", 6000, "The port stellar listens for packets on. Packets on this port will be sent to the satellite.")
-	command.Flags().StringVar(&sendHost, "send-host", "127.0.0.1", "The host to send packets to. Only used by udp.")
-	command.Flags().Uint16Var(&sendPort, "send-port", 6001, "The port stellar sends packets to. Packets from the satellite will be sent to this port.")
+	// Add flags to the command.
+	flags.AddAllFlags(command)
 
 	return command
 }
