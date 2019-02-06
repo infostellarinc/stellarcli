@@ -11,6 +11,7 @@ import (
 
 const (
 	MAX_CONNECTION   = 1
+	LISTEN_TIMEOUT   = 5 * time.Second
 	RECV_BUFFER_SIZE = 1024 * 1024
 	RECV_TIMEOUT     = 500 * time.Millisecond
 )
@@ -41,6 +42,8 @@ func StartTCPProxy(addr string, satelliteId string) (TCPProxy, error) {
 	}
 
 	l = netutil.LimitListener(l, MAX_CONNECTION)
+	tcpListener := l.(*net.TCPListener)
+	tcpListener.SetDeadline(time.Now().Add(LISTEN_TIMEOUT))
 
 	sendChan := make(chan []byte)
 
@@ -51,7 +54,7 @@ func StartTCPProxy(addr string, satelliteId string) (TCPProxy, error) {
 	}
 
 	t := &tcpProxy{
-		listener: l,
+		listener: tcpListener,
 		stream:   stream,
 		sendChan: sendChan,
 		recvBuf:  make([]byte, RECV_BUFFER_SIZE),
@@ -92,6 +95,10 @@ func (t *tcpProxy) listen() {
 		default:
 			conn, err := t.listener.Accept()
 			if err != nil {
+				if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+					// timeout
+					continue
+				}
 				log.Printf("Could not accept incoming connection: %v\n", err)
 				continue
 			}
