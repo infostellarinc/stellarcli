@@ -21,7 +21,7 @@ type TCPProxy interface {
 }
 
 type tcpProxy struct {
-	listener        net.Listener
+	listener        *net.TCPListener
 	listenCloseChan chan struct{}
 	conn            net.Conn
 	stream          SatelliteStream
@@ -43,7 +43,6 @@ func StartTCPProxy(addr string, satelliteId string) (TCPProxy, error) {
 
 	l = netutil.LimitListener(l, MAX_CONNECTION)
 	tcpListener := l.(*net.TCPListener)
-	tcpListener.SetDeadline(time.Now().Add(LISTEN_TIMEOUT))
 
 	sendChan := make(chan []byte)
 
@@ -93,6 +92,7 @@ func (t *tcpProxy) listen() {
 		case <-t.listenCloseChan:
 			return
 		default:
+			t.listener.SetDeadline(time.Now().Add(LISTEN_TIMEOUT))
 			conn, err := t.listener.Accept()
 			if err != nil {
 				if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
