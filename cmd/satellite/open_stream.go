@@ -53,22 +53,29 @@ func NewOpenStreamCommand() *cobra.Command {
 			recvAddr := listenHost + ":" + strconv.Itoa(int(listenPort))
 			sendAddr := sendHost + ":" + strconv.Itoa(int(sendPort))
 
-			p, err := stream.StartUDPProxy(recvAddr, sendAddr, args[0])
-			if err != nil {
-				log.Fatalf("Could not open UDP proxy: %v\n", err)
+			switch mode {
+			case "udp":
+				p, err := stream.StartUDPProxy(recvAddr, sendAddr, args[0])
+				if err != nil {
+					log.Fatalf("Could not open UDP proxy: %v\n", err)
+				}
+				defer p.Close()
+			case "tcp":
+				t, err := stream.StartTCPProxy(recvAddr, args[0])
+				if err != nil {
+					log.Fatalf("Could not open TCP proxy: %v\n", err)
+				}
+				defer t.Close()
+			default:
+				log.Fatalf("Unsupported proxy mode: %v\n", mode)
 			}
-			defer p.Close()
 
 			c := make(chan os.Signal)
-
-			if err != nil {
-				log.Fatalf("Could not start UDP proxy: %v\n", err)
-			}
 			<-c
 		},
 	}
 
-	command.Flags().StringVarP(&mode, "mode", "m", "udp", "The proxy mode to use. One of [udp].")
+	command.Flags().StringVarP(&mode, "mode", "m", "udp", "The proxy mode to use. One of [udp,tcp].")
 	command.Flags().StringVar(&listenHost, "listen-host", "127.0.0.1", "The host to listen for packets on.")
 	command.Flags().Uint16Var(&listenPort, "listen-port", 6000, "The port stellar listens for packets on. Packets on this port will be sent to the satellite.")
 	command.Flags().StringVar(&sendHost, "send-host", "127.0.0.1", "The host to send packets to. Only used by udp.")
