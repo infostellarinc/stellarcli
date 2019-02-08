@@ -41,7 +41,7 @@ var (
 	defaultSendPort uint16 = 6001
 )
 
-type OpenStreamFlags struct {
+type ProxyFlags struct {
 	ProxyProtocol string
 
 	ListenHost string
@@ -51,7 +51,7 @@ type OpenStreamFlags struct {
 }
 
 // Add flags to the command.
-func (f *OpenStreamFlags) AddFlags(cmd *cobra.Command) {
+func (f *ProxyFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.ProxyProtocol, "proxy", "", defaultProxyProtocol,
 		"Proxy protocol. One of: "+strings.Join(availableFormats, "|"))
 	cmd.Flags().StringVar(&f.ListenHost, "listen-host", defaultListenHost,
@@ -65,7 +65,7 @@ func (f *OpenStreamFlags) AddFlags(cmd *cobra.Command) {
 }
 
 // Validate flag values.
-func (f *OpenStreamFlags) Validate() error {
+func (f *ProxyFlags) Validate() error {
 	if !util.Contains(availableProxy, f.ProxyProtocol) {
 		return fmt.Errorf("invalid proxy protocol: %v. Expected one of: %v", f.ProxyProtocol,
 			strings.Join(availableProxy, "|"))
@@ -75,7 +75,7 @@ func (f *OpenStreamFlags) Validate() error {
 }
 
 // Return a Proxy corresponding to the protocol.
-func (f *OpenStreamFlags) ToProxy() stream.Proxy {
+func (f *ProxyFlags) ToProxy() stream.Proxy {
 	protocol := util.ToLower(f.ProxyProtocol)
 
 	recvAddr := fmt.Sprintf("%s:%d", f.ListenHost, f.ListenPort)
@@ -98,9 +98,9 @@ func (f *OpenStreamFlags) ToProxy() stream.Proxy {
 	return nil
 }
 
-// Create a new OpenStreamFlags with default values set.
-func NewOpenStreamFlags() *OpenStreamFlags {
-	return &OpenStreamFlags{
+// Create a new ProxyFlags with default values set.
+func NewProxyFlags() *ProxyFlags {
+	return &ProxyFlags{
 		ProxyProtocol: defaultProxyProtocol,
 
 		ListenHost: defaultListenHost,

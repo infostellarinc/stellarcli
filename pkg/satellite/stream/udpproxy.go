@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-type UDPProxy struct {
+type udpProxy struct {
 	recvConn net.PacketConn
 	sendConn net.Conn
 	stream   SatelliteStream
@@ -57,7 +57,7 @@ func NewUDPProxy(o *UDPProxyOptions) (Proxy, error) {
 
 	sendChan := make(chan []byte)
 
-	p := &UDPProxy{
+	p := &udpProxy{
 		recvConn:      rc,
 		sendConn:      sc,
 		sendChan:      sendChan,
@@ -71,7 +71,7 @@ func NewUDPProxy(o *UDPProxyOptions) (Proxy, error) {
 }
 
 // Start listening for packets to send to the satellite and sending back received packets.
-func (p *UDPProxy) Start(o *SatelliteStreamOptions) error {
+func (p *udpProxy) Start(o *SatelliteStreamOptions) error {
 
 	var err error
 	p.stream, err = OpenSatelliteStream(o, p.sendChan)
@@ -87,7 +87,7 @@ func (p *UDPProxy) Start(o *SatelliteStreamOptions) error {
 }
 
 // Close the proxy.
-func (p *UDPProxy) Close() error {
+func (p *udpProxy) Close() error {
 
 	close(p.sendChan)
 
@@ -103,7 +103,7 @@ func (p *UDPProxy) Close() error {
 	return nil
 }
 
-func (p *UDPProxy) recvLoop() {
+func (p *udpProxy) recvLoop() {
 	defer p.closeWg.Done()
 	for {
 		select {
@@ -123,7 +123,7 @@ func (p *UDPProxy) recvLoop() {
 	}
 }
 
-func (p *UDPProxy) sendLoop() {
+func (p *udpProxy) sendLoop() {
 	defer p.closeWg.Done()
 	for {
 		select {
