@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/spf13/cobra"
 
@@ -64,6 +65,7 @@ func NewOpenStreamCommand() *cobra.Command {
 			}
 
 			c := make(chan os.Signal)
+			signal.Notify(c, os.Interrupt)
 			defer close(c)
 
 			err := proxy.Start(o)
