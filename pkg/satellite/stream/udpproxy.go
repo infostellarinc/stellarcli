@@ -22,15 +22,13 @@ import (
 )
 
 type udpProxy struct {
-	recvConn net.PacketConn
-	sendConn net.Conn
-	stream   SatelliteStream
-
-	recvBuf       []byte
+	recvConn      net.PacketConn
+	sendConn      net.Conn
 	recvCloseChan chan struct{}
-
-	sendChan      chan []byte
 	sendCloseChan chan struct{}
+
+	stream     SatelliteStream
+	streamChan chan []byte
 
 	closeWg sync.WaitGroup
 }
@@ -55,15 +53,14 @@ func NewUDPProxy(o *UDPProxyOptions) (Proxy, error) {
 		return nil, err
 	}
 
-	sendChan := make(chan []byte)
+	streamChan := make(chan []byte)
 
 	p := &udpProxy{
 		recvConn:      rc,
 		sendConn:      sc,
-		sendChan:      sendChan,
-		recvBuf:       make([]byte, 1024*1024),
 		sendCloseChan: make(chan struct{}),
 		recvCloseChan: make(chan struct{}),
+		streamChan:    streamChan,
 		closeWg:       sync.WaitGroup{},
 	}
 
@@ -74,7 +71,7 @@ func NewUDPProxy(o *UDPProxyOptions) (Proxy, error) {
 func (p *udpProxy) Start(o *SatelliteStreamOptions) error {
 
 	var err error
-	p.stream, err = OpenSatelliteStream(o, p.sendChan)
+	p.stream, err = OpenSatelliteStream(o, p.streamChan)
 	if err != nil {
 		return err
 	}
@@ -89,15 +86,13 @@ func (p *udpProxy) Start(o *SatelliteStreamOptions) error {
 // Close the proxy.
 func (p *udpProxy) Close() error {
 
-	close(p.sendChan)
-
+	// Close connections used in send/receive loop.
 	close(p.recvCloseChan)
 	close(p.sendCloseChan)
-
 	p.closeWg.Wait()
 
-	p.sendConn.Close()
-	p.recvConn.Close()
+	// Close the API stream.
+	close(p.streamChan)
 	p.stream.Close()
 
 	return nil
@@ -105,19 +100,23 @@ func (p *udpProxy) Close() error {
 
 func (p *udpProxy) recvLoop() {
 	defer p.closeWg.Done()
+
+	recvBuf := make([]byte, 1024*1024)
+
 	for {
 		select {
 		case <-p.recvCloseChan:
+			p.recvConn.Close()
 			return
 		default:
 			p.recvConn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
-			n, _, err := p.recvConn.ReadFrom(p.recvBuf)
+			n, _, err := p.recvConn.ReadFrom(recvBuf)
 			if err != nil {
 				if !err.(net.Error).Timeout() {
 					log.Fatalf("Error receiving on UDP port: %v\n", err)
 				}
 			} else {
-				p.stream.Send(p.recvBuf[:n])
+				p.stream.Send(recvBuf[:n])
 			}
 		}
 	}
@@ -127,9 +126,10 @@ func (p *udpProxy) sendLoop() {
 	defer p.closeWg.Done()
 	for {
 		select {
-		case payload := <-p.sendChan:
+		case payload := <-p.streamChan:
 			p.sendConn.Write(payload)
 		case <-p.sendCloseChan:
+			p.sendConn.Close()
 			return
 		}
 	}
