@@ -47,14 +47,14 @@ type satelliteStream struct {
 	conn        *grpc.ClientConn
 	streamId    string
 
-	recvChan           chan []byte
+	recvChan           chan<- []byte
 	recvLoopClosedChan chan struct{}
 
 	state uint32
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
-func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan []byte) (SatelliteStream, error) {
+func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (SatelliteStream, error) {
 	s := &satelliteStream{
 		satelliteId:        o.SatelliteID,
 		streamId:           "",
