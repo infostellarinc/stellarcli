@@ -30,38 +30,57 @@ var (
 	defaultProxyProtocol = "udp"
 
 	// Supported proxy.
-	availableProxy = []string{"udp"}
-	// Default listen host
-	defaultListenHost = "127.0.0.1"
-	// Default listen port
-	defaultListenPort uint16 = 6000
-	// Default send host
-	defaultSendHost = "127.0.0.1"
-	// Default send port
-	defaultSendPort uint16 = 6001
+	availableProxy = []string{"udp", "tcp"}
+	// Default listen host for UDP.
+	defaultUDPListenHost = "127.0.0.1"
+	// Default listen port for UDP.
+	defaultUDPListenPort uint16 = 6000
+	// Default send host for UDP.
+	defaultUDPSendHost = "127.0.0.1"
+	// Default send port for UDP.
+	defaultUDPSendPort uint16 = 6001
+
+	// Default listen host for TCP.
+	defaultTCPListenHost = "127.0.0.1"
+	// Default listen port for TCP.
+	defaultTCPListenPort uint16 = 6000
 )
 
 type ProxyFlags struct {
 	ProxyProtocol string
 
-	ListenHost string
-	ListenPort uint16
-	SendHost   string
-	SendPort   uint16
+	UDPListenHost string
+	UDPListenPort uint16
+	UDPSendHost   string
+	UDPSendPort   uint16
+
+	TCPListenHost string
+	TCPListenPort uint16
 }
 
 // Add flags to the command.
 func (f *ProxyFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.ProxyProtocol, "proxy", "", defaultProxyProtocol,
 		"Proxy protocol. One of: "+strings.Join(availableFormats, "|"))
-	cmd.Flags().StringVar(&f.ListenHost, "listen-host", defaultListenHost,
+
+	cmd.Flags().StringVar(&f.UDPListenHost, "listen-host", "", "Deprecated: use udp-listen-host instead.")
+	cmd.Flags().Uint16Var(&f.UDPListenPort, "listen-port", 0, "Deprecated: use udp-listen-port instead.")
+	cmd.Flags().StringVar(&f.UDPSendHost, "send-host", "", "Deprecated: use udp-send-host instead.")
+	cmd.Flags().Uint16Var(&f.UDPSendPort, "send-port", 0, "Deprecated: use udp-send-port instead.")
+
+	cmd.Flags().StringVar(&f.UDPListenHost, "udp-listen-host", defaultUDPListenHost,
 		"The host to listen for packets on.")
-	cmd.Flags().Uint16Var(&f.ListenPort, "listen-port", defaultListenPort,
+	cmd.Flags().Uint16Var(&f.UDPListenPort, "udp-listen-port", defaultUDPListenPort,
 		"The port stellar listens for packets on. Packets on this port will be sent to the satellite.")
-	cmd.Flags().StringVar(&f.SendHost, "send-host", defaultSendHost,
-		"The host to send packets to. Only used by udp.")
-	cmd.Flags().Uint16Var(&f.SendPort, "send-port", defaultSendPort,
-		"The port stellar sends packets to. Packets from the satellite will be sent to this port.")
+	cmd.Flags().StringVar(&f.UDPSendHost, "udp-send-host", defaultUDPSendHost,
+		"The host to send UDP packets to.")
+	cmd.Flags().Uint16Var(&f.UDPSendPort, "udp-send-port", defaultUDPSendPort,
+		"The port stellar sends UDP packets to. Packets from the satellite will be sent to this port.")
+
+	cmd.Flags().StringVar(&f.TCPListenHost, "tcp-listen-host", defaultTCPListenHost,
+		"The host to listen for TCP connection on.")
+	cmd.Flags().Uint16Var(&f.TCPListenPort, "tcp-listen-port", defaultTCPListenPort,
+		"The port used to communicate with satellite. Clients can receive and send data through the port.")
 }
 
 // Validate flag values.
@@ -78,11 +97,11 @@ func (f *ProxyFlags) Validate() error {
 func (f *ProxyFlags) ToProxy() stream.Proxy {
 	protocol := util.ToLower(f.ProxyProtocol)
 
-	recvAddr := fmt.Sprintf("%s:%d", f.ListenHost, f.ListenPort)
-	sendAddr := fmt.Sprintf("%s:%d", f.SendHost, f.SendPort)
-
 	switch protocol {
 	case "udp":
+		recvAddr := fmt.Sprintf("%s:%d", f.UDPListenHost, f.UDPListenPort)
+		sendAddr := fmt.Sprintf("%s:%d", f.UDPSendHost, f.UDPSendPort)
+
 		o := &stream.UDPProxyOptions{
 			RecvAddr: recvAddr,
 			SendAddr: sendAddr,
@@ -90,6 +109,16 @@ func (f *ProxyFlags) ToProxy() stream.Proxy {
 		p, err := stream.NewUDPProxy(o)
 		if err != nil {
 			log.Fatalf("Could not open UDP proxy: %v\n", err)
+		}
+		return p
+	case "tcp":
+		addr := fmt.Sprintf("%s:%d", f.TCPListenHost, f.TCPListenPort)
+		o := &stream.TCPProxyOptions{
+			Addr: addr,
+		}
+		p, err := stream.NewTCPProxy(o)
+		if err != nil {
+			log.Fatalf("Could not open TCP proxy: %v\n", err)
 		}
 		return p
 	}
@@ -103,9 +132,11 @@ func NewProxyFlags() *ProxyFlags {
 	return &ProxyFlags{
 		ProxyProtocol: defaultProxyProtocol,
 
-		ListenHost: defaultListenHost,
-		ListenPort: defaultListenPort,
-		SendHost:   defaultSendHost,
-		SendPort:   defaultSendPort,
+		UDPListenHost: defaultUDPListenHost,
+		UDPListenPort: defaultUDPListenPort,
+		UDPSendHost:   defaultUDPSendHost,
+		UDPSendPort:   defaultUDPSendPort,
+		TCPListenHost: defaultTCPListenHost,
+		TCPListenPort: defaultTCPListenPort,
 	}
 }
