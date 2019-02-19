@@ -58,7 +58,7 @@ func (p *tcpProxy) Start(o *SatelliteStreamOptions) error {
 	var err error
 	p.stream, err = OpenSatelliteStream(o, p.streamChan)
 	if err != nil {
-		log.Fatalf("Failed to connect StellarStation: %v:", err)
+		log.Fatalf("Failed to connect to StellarStation: %v:", err)
 	}
 
 	go p.serve()
@@ -95,7 +95,7 @@ func (p *tcpProxy) serve() {
 		select {
 		case conn := <-p.connected:
 			conns[conn] = true
-			log.Println("Connected a new client:", conn.RemoteAddr().String())
+			log.Println("Connected to a new client:", conn.RemoteAddr().String())
 			log.Println("Connected clients:", len(conns))
 		case conn := <-p.disconnected:
 			delete(conns, conn)

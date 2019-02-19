@@ -43,7 +43,7 @@ var (
 	// Default listen host for TCP.
 	defaultTCPListenHost = "127.0.0.1"
 	// Default listen port for TCP.
-	defaultTCPListenPort uint16 = 4000
+	defaultTCPListenPort uint16 = 6000
 )
 
 type ProxyFlags struct {
@@ -61,7 +61,13 @@ type ProxyFlags struct {
 // Add flags to the command.
 func (f *ProxyFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.ProxyProtocol, "proxy", "", defaultProxyProtocol,
-		"Proxy protocol. One of: "+strings.Join(availableProxy, "|"))
+		"Proxy protocol. One of: "+strings.Join(availableFormats, "|"))
+
+	cmd.Flags().StringVar(&f.UDPListenHost, "listen-host", "", "Deprecated: use udp-listen-host instead.")
+	cmd.Flags().Uint16Var(&f.UDPListenPort, "listen-port", 0, "Deprecated: use udp-listen-port instead.")
+	cmd.Flags().StringVar(&f.UDPSendHost, "send-host", "", "Deprecated: use udp-send-host instead.")
+	cmd.Flags().Uint16Var(&f.UDPSendPort, "send-port", 0, "Deprecated: use udp-send-port instead.")
+
 	cmd.Flags().StringVar(&f.UDPListenHost, "udp-listen-host", defaultUDPListenHost,
 		"The host to listen for packets on.")
 	cmd.Flags().Uint16Var(&f.UDPListenPort, "udp-listen-port", defaultUDPListenPort,
@@ -70,6 +76,7 @@ func (f *ProxyFlags) AddFlags(cmd *cobra.Command) {
 		"The host to send UDP packets to.")
 	cmd.Flags().Uint16Var(&f.UDPSendPort, "udp-send-port", defaultUDPSendPort,
 		"The port stellar sends UDP packets to. Packets from the satellite will be sent to this port.")
+
 	cmd.Flags().StringVar(&f.TCPListenHost, "tcp-listen-host", defaultTCPListenHost,
 		"The host to listen for TCP connection on.")
 	cmd.Flags().Uint16Var(&f.TCPListenPort, "tcp-listen-port", defaultTCPListenPort,
@@ -106,7 +113,6 @@ func (f *ProxyFlags) ToProxy() stream.Proxy {
 		return p
 	case "tcp":
 		addr := fmt.Sprintf("%s:%d", f.TCPListenHost, f.TCPListenPort)
-		fmt.Println(addr)
 		o := &stream.TCPProxyOptions{
 			Addr: addr,
 		}
