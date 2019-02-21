@@ -32,7 +32,8 @@ const (
 )
 
 type SatelliteStreamOptions struct {
-	SatelliteID string
+	AcceptedFraming []stellarstation.Framing
+	SatelliteID     string
 }
 
 type SatelliteStream interface {
@@ -42,6 +43,8 @@ type SatelliteStream interface {
 }
 
 type satelliteStream struct {
+	acceptedFraming []stellarstation.Framing
+
 	satelliteId string
 	stream      stellarstation.StellarStationService_OpenSatelliteStreamClient
 	conn        *grpc.ClientConn
@@ -56,6 +59,7 @@ type satelliteStream struct {
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
 func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (SatelliteStream, error) {
 	s := &satelliteStream{
+		acceptedFraming:    o.AcceptedFraming,
 		satelliteId:        o.SatelliteID,
 		streamId:           "",
 		recvChan:           recvChan,
@@ -139,8 +143,9 @@ func (ss *satelliteStream) openStream() error {
 	}
 
 	req := stellarstation.SatelliteStreamRequest{
-		SatelliteId: ss.satelliteId,
-		StreamId:    ss.streamId,
+		AcceptedFraming: ss.acceptedFraming,
+		SatelliteId:     ss.satelliteId,
+		StreamId:        ss.streamId,
 	}
 
 	err = stream.Send(&req)
