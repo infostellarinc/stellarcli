@@ -20,9 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	version = "v0.1.1"
-)
+var ReleaseVersion string
 
 // Create version command.
 func NewVersionCommand() *cobra.Command {
@@ -33,7 +31,7 @@ func NewVersionCommand() *cobra.Command {
 		Long:  "Version prints the stellar version.",
 
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(version)
+			fmt.Printf("v%s\n", ReleaseVersion)
 		},
 	}
 

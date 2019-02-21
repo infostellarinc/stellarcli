@@ -25,6 +25,12 @@ golang {
 }
 
 afterEvaluate {
+    tasks.withType(org.curioswitch.gradle.golang.tasks.GoTask).configureEach { task ->
+        if (task.name.startsWith('goBuild')) {
+            task.args '-ldflags', "'-X github.com/infostellarinc/stellarcli/cmd.ReleaseVersion=${version}'"
+        }
+    }
+
     golang.goOses.get().each {goOs ->
         def camelCase = goOs.capitalize() + 'Amd64'
         task "archive${camelCase}"(type: Zip) {
