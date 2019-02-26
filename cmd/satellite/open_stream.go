@@ -40,7 +40,8 @@ var (
 func NewOpenStreamCommand() *cobra.Command {
 	proxyFlags := flag.NewProxyFlags()
 	framingFlags := flag.NewFramingFlags()
-	flags := flag.NewFlagSet(proxyFlags, framingFlags)
+	verboseFlag := flag.NewVerboseFlags()
+	flags := flag.NewFlagSet(proxyFlags, framingFlags, verboseFlag)
 
 	command := &cobra.Command{
 		Use:   openStreamUse,
@@ -64,6 +65,7 @@ func NewOpenStreamCommand() *cobra.Command {
 			o := &stream.SatelliteStreamOptions{
 				SatelliteID:     args[0],
 				AcceptedFraming: framingFlags.ToProtoAcceptedFraming(),
+				IsVerbose:       verboseFlag.IsVerbose,
 			}
 
 			c := make(chan os.Signal)

@@ -34,6 +34,7 @@ const (
 type SatelliteStreamOptions struct {
 	AcceptedFraming []stellarstation.Framing
 	SatelliteID     string
+	IsVerbose       bool
 }
 
 type SatelliteStream interface {
@@ -53,7 +54,8 @@ type satelliteStream struct {
 	recvChan           chan<- []byte
 	recvLoopClosedChan chan struct{}
 
-	state uint32
+	state     uint32
+	isVerbose bool
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
@@ -65,6 +67,7 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		recvChan:           recvChan,
 		state:              OPEN,
 		recvLoopClosedChan: make(chan struct{}),
+		isVerbose:          o.IsVerbose,
 	}
 
 	s.start()
@@ -124,6 +127,19 @@ func (ss *satelliteStream) recvLoop() {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			payload := res.GetReceiveTelemetryResponse().Telemetry.Data
 			ss.recvChan <- payload
+		case *stellarstation.SatelliteStreamResponse_StreamEvent:
+			if ss.isVerbose {
+				if gsState := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gsState != nil {
+					if a := gsState.Antenna; a != nil {
+						log.Printf("azimuth: %v, elevation: %v\n", a.Azimuth.Measured, a.Elevation.Measured)
+					}
+
+					if rcv := gsState.Receiver; rcv != nil {
+						log.Printf("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
+					}
+				}
+
+			}
 		}
 	}
 }
