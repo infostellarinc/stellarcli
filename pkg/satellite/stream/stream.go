@@ -129,13 +129,13 @@ func (ss *satelliteStream) recvLoop() {
 			ss.recvChan <- payload
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
 			if ss.isVerbose {
-				if gs := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gs != nil {
-					if a := gs.Antenna; a != nil {
+				if gsState := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gsState != nil {
+					if a := gsState.Antenna; a != nil {
 						log.Printf("azimuth: %v, elevation: %v\n", a.Azimuth.Measured, a.Elevation.Measured)
 					}
 
-					if rcv := gs.Receiver; rcv != nil {
-						log.Printf("central frequency (MHz): %.2f\n", float64(gs.Receiver.CenterFrequencyHz)/1e6)
+					if rcv := gsState.Receiver; rcv != nil {
+						log.Printf("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
 					}
 				}
 
