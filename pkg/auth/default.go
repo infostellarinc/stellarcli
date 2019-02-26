@@ -35,14 +35,14 @@ func NewDefaultCredentials() (credentials.PerRPCCredentials, error) {
 func StoreCredentialsFile(path string) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatalf("Could not read credentials file.\n%v", err)
+		log.Fatalf("could not read credentials file.\n%v", err)
 	}
 
 	config.EnsureConfigDir()
 
 	err = ioutil.WriteFile(wellKnownFile(), content, 0600)
 	if err != nil {
-		log.Fatalf("Could not write to config directory.\n%v", err)
+		log.Fatalf("could not write to config directory.\n%v", err)
 	}
 }
 

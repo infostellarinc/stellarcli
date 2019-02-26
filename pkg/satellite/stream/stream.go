@@ -111,10 +111,10 @@ func (ss *satelliteStream) recvLoop() {
 				err = ss.openStream()
 				if err != nil {
 					// Couldn't reconnect to the server, bailout.
-					log.Fatalf("Error opening API stream: %v\n", err)
+					log.Fatalf("error opening API stream: %v\n", err)
 				}
 			} else {
-				log.Fatalf("Error reading from API stream: %v\n", err)
+				log.Fatalf("error reading from API stream: %v\n", err)
 			}
 		}
 

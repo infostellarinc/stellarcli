@@ -58,7 +58,7 @@ func (p *tcpProxy) Start(o *SatelliteStreamOptions) error {
 	var err error
 	p.stream, err = OpenSatelliteStream(o, p.streamChan)
 	if err != nil {
-		log.Fatalf("Failed to connect to StellarStation: %v:", err)
+		log.Fatalf("failed to connect to StellarStation: %v:", err)
 	}
 
 	go p.serve()
@@ -67,10 +67,10 @@ func (p *tcpProxy) Start(o *SatelliteStreamOptions) error {
 		for {
 			conn, err := p.listener.Accept()
 			if err != nil {
-				log.Printf("Failed to accept connection: %v", err)
+				log.Printf("failed to accept connection: %v", err)
 				return
 			}
-			log.Println("Accepted a new connection.")
+			log.Println("accepted a new connection.")
 
 			go p.handleConn(conn)
 		}
@@ -95,13 +95,13 @@ func (p *tcpProxy) serve() {
 		select {
 		case conn := <-p.connected:
 			conns[conn] = true
-			log.Println("Connected to a new client:", conn.RemoteAddr().String())
-			log.Println("Connected clients:", len(conns))
+			log.Println("connected to a new client:", conn.RemoteAddr().String())
+			log.Println("connected clients:", len(conns))
 		case conn := <-p.disconnected:
 			delete(conns, conn)
 			conn.Close()
-			log.Println("Disconnected the client:", conn.RemoteAddr().String())
-			log.Println("Connected clients:", len(conns))
+			log.Println("disconnected the client:", conn.RemoteAddr().String())
+			log.Println("connected clients:", len(conns))
 		case payload := <-p.streamChan:
 			for conn := range conns {
 				conn.Write(payload)

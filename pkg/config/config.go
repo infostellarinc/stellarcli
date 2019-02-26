@@ -36,7 +36,7 @@ func GetConfigDir() string {
 
 	home, err := homedir.Dir()
 	if err != nil {
-		log.Fatalf("Could not find home directory.\n%v", err)
+		log.Fatalf("could not find home directory.\n%v", err)
 	}
 
 	return filepath.Join(home, ".config", "stellar")

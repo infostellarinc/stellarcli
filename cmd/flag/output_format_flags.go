@@ -68,7 +68,7 @@ func (f *OutputFormatFlags) ToPrinter() printer.Printer {
 		return printer.NewCSVPrinter(o)
 	}
 
-	log.Fatalf("Unsupported output format: %v", format)
+	log.Fatalf("unsupported output format: %v", format)
 	return nil
 }
 
