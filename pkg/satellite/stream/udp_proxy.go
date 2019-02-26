@@ -113,7 +113,7 @@ func (p *udpProxy) recvLoop() {
 			n, _, err := p.recvConn.ReadFrom(recvBuf)
 			if err != nil {
 				if !err.(net.Error).Timeout() {
-					log.Fatalf("Error receiving on UDP port: %v\n", err)
+					log.Fatalf("error receiving on UDP port: %v\n", err)
 				}
 			} else {
 				p.stream.Send(recvBuf[:n])

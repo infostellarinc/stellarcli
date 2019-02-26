@@ -108,7 +108,7 @@ func (f *ProxyFlags) ToProxy() stream.Proxy {
 		}
 		p, err := stream.NewUDPProxy(o)
 		if err != nil {
-			log.Fatalf("Could not open UDP proxy: %v\n", err)
+			log.Fatalf("could not open UDP proxy: %v\n", err)
 		}
 		return p
 	case "tcp":
@@ -118,12 +118,12 @@ func (f *ProxyFlags) ToProxy() stream.Proxy {
 		}
 		p, err := stream.NewTCPProxy(o)
 		if err != nil {
-			log.Fatalf("Could not open TCP proxy: %v\n", err)
+			log.Fatalf("could not open TCP proxy: %v\n", err)
 		}
 		return p
 	}
 
-	log.Fatalf("Unsupported proxy protocol: %v", protocol)
+	log.Fatalf("unsupported proxy protocol: %v", protocol)
 	return nil
 }
 
