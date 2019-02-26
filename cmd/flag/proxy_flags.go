@@ -43,7 +43,7 @@ var (
 	// Default listen host for TCP.
 	defaultTCPListenHost = "127.0.0.1"
 	// Default listen port for TCP.
-	defaultTCPListenPort uint16 = 6000
+	defaultTCPListenPort uint16 = 6001
 )
 
 type ProxyFlags struct {
