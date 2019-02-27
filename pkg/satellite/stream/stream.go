@@ -70,9 +70,9 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		isVerbose:          o.IsVerbose,
 	}
 
-	s.start()
+	err := s.start()
 
-	return s, nil
+	return s, err
 }
 
 // Send sends a packet to the satellite.
