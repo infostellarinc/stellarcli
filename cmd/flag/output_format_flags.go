@@ -28,7 +28,7 @@ import (
 
 var (
 	// Supported output formats.
-	availableFormats = []string{"csv", "wide"}
+	availableFormats = []string{"csv", "wide", "json"}
 	// Default output format.
 	defaultOutputFormat = "wide"
 	// Default output.
@@ -66,6 +66,9 @@ func (f *OutputFormatFlags) ToPrinter() printer.Printer {
 	case "csv":
 		o := printer.NewCSVPrinterOptions(defaultOutput)
 		return printer.NewCSVPrinter(o)
+	case "json":
+		o := printer.NewJSONPrinterOptions(defaultOutput)
+		return printer.NewJSONPrinter(o)
 	}
 
 	log.Fatalf("unsupported output format: %v", format)
