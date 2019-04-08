@@ -61,7 +61,7 @@ type ProxyFlags struct {
 // Add flags to the command.
 func (f *ProxyFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.ProxyProtocol, "proxy", "", defaultProxyProtocol,
-		"Proxy protocol. One of: "+strings.Join(availableFormats, "|"))
+		"Proxy protocol. One of: "+strings.Join(availableProxy, "|"))
 
 	cmd.Flags().StringVar(&f.UDPListenHost, "listen-host", "", "Deprecated: use udp-listen-host instead.")
 	cmd.Flags().Uint16Var(&f.UDPListenPort, "listen-port", 0, "Deprecated: use udp-listen-port instead.")
