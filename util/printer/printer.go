@@ -20,4 +20,8 @@ type Printer interface {
 	Flush()
 	// Write an object represented as an array.
 	Write(r []interface{})
+	// Write a header.
+	WriteHeader(t []TemplateItem)
+	// Write an object with a template.
+	WriteWithTemplate(r []map[string]interface{}, t []TemplateItem)
 }

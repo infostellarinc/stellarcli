@@ -21,34 +21,32 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
-	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 
-// Headers of columns
-var headers = []interface{}{
-	"AOS_TIME",
-	"LOS_TIME",
-	"GS_LAT",
-	"GS_LONG",
-	"GS_COUNTRY",
-	"MAX_ELEVATION_DEGREE",
-	"DOWNLINK_CENTER_FREQUENCY_HZ",
-	"UPLINK_CENTER_FREQUENCY_HZ",
+var listPassesVerboseTemplate = []printer.TemplateItem{
+	{"RESERVATION_TOKEN", "reservationToken"},
+	{"AOS_TIME", "aos"},
+	{"LOS_TIME", "los"},
+	{"GS_LAT", "gsInfo.gsLat"},
+	{"GS_LONG", "gsInfo.gsLong"},
+	{"GS_COUNTRY", "gsInfo.gsCountry"},
+	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
+	{"MAX_ELEVATION_TIME", "maxElevationTime"},
+	{"DOWNLINK_CENTER_FREQUENCY_HZ", "downlinkFrequency"},
+	{"UPLINK_CENTER_FREQUENCY_HZ", "uplinkFrequency"},
 }
 
-var verboseHeaders = []interface{}{
-	"RESERVATION_TOKEN",
-	"AOS_TIME",
-	"LOS_TIME",
-	"GS_LAT",
-	"GS_LONG",
-	"GS_COUNTRY",
-	"MAX_ELEVATION_DEGREE",
-	"MAX_ELEVATION_TIME",
-	"DOWNLINK_CENTER_FREQUENCY_HZ",
-	"UPLINK_CENTER_FREQUENCY_HZ",
+var listPassesTemplate = []printer.TemplateItem{
+	{"AOS_TIME", "aos"},
+	{"LOS_TIME", "los"},
+	{"GS_LAT", "gsInfo.gsLat"},
+	{"GS_LONG", "gsInfo.gsLong"},
+	{"GS_COUNTRY", "gsInfo.gsCountry"},
+	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
+	{"DOWNLINK_CENTER_FREQUENCY_HZ", "downlinkFrequency"},
+	{"UPLINK_CENTER_FREQUENCY_HZ", "uplinkFrequency"},
 }
 
 type ListAvailablePassesOptions struct {
@@ -74,14 +72,15 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 		log.Fatal(err)
 	}
 
-	targetHeaders := headers
+	targetTemplate := listPassesTemplate
 	if o.IsVerbose {
-		targetHeaders = verboseHeaders
+		targetTemplate = listPassesVerboseTemplate
 	}
 
 	defer o.Printer.Flush()
-	o.Printer.Write(targetHeaders)
+	o.Printer.WriteHeader(targetTemplate)
 
+	var results []map[string]interface{}
 	for _, pass := range result.Pass {
 		aos, err := ptypes.Timestamp(pass.AosTime)
 		if err != nil {
@@ -99,21 +98,23 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 		}
 
 		if pass.MaxElevationDegrees > o.MinElevation {
-			values := map[interface{}]interface{}{
-				"RESERVATION_TOKEN":            pass.ReservationToken,
-				"AOS_TIME":                     aos,
-				"LOS_TIME":                     los,
-				"GS_LAT":                       pass.GroundStationLatitude,
-				"GS_LONG":                      pass.GroundStationLongitude,
-				"GS_COUNTRY":                   pass.GroundStationCountryCode,
-				"MAX_ELEVATION_DEGREE":         pass.MaxElevationDegrees,
-				"MAX_ELEVATION_TIME":           maxElevationTime,
-				"DOWNLINK_CENTER_FREQUENCY_HZ": pass.DownlinkCenterFrequencyHz,
-				"UPLINK_CENTER_FREQUENCY_HZ":   pass.UplinkCenterFrequencyHz,
+			obj := map[string]interface{}{
+				"reservationToken": pass.ReservationToken,
+				"aos":              aos,
+				"los":              los,
+				"gsInfo": map[string]interface{}{
+					"gsLat":     pass.GroundStationLatitude,
+					"gsLong":    pass.GroundStationLongitude,
+					"gsCountry": pass.GroundStationCountryCode,
+				},
+				"maxElevationDegree": pass.MaxElevationDegrees,
+				"maxElevationTime":   maxElevationTime,
+				"downlinkFrequency":  pass.DownlinkCenterFrequencyHz,
+				"uplinkFrequency":    pass.UplinkCenterFrequencyHz,
 			}
 
-			o.Printer.Write(util.MapToSlice(values, targetHeaders))
-
+			results = append(results, obj)
 		}
 	}
+	o.Printer.WriteWithTemplate(results, targetTemplate)
 }
