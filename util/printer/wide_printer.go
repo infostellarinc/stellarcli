@@ -110,7 +110,6 @@ func (p *WidePrinter) WriteHeader(t []TemplateItem) {
 	p.Write(GetLabels(t))
 }
 
-
 // Write fields with the template.
 func (p *WidePrinter) WriteWithTemplate(r []map[string]interface{}, t []TemplateItem) {
 	for _, obj := range r {
