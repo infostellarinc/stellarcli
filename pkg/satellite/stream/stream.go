@@ -19,7 +19,9 @@ import (
 	"io"
 	"log"
 	"sync/atomic"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
@@ -30,6 +32,8 @@ const (
 	OPEN   uint32 = 0
 	CLOSED uint32 = 1
 )
+
+const MaxElapsedTime = 60 * time.Second
 
 type SatelliteStreamOptions struct {
 	AcceptedFraming []stellarstation.Framing
@@ -88,7 +92,7 @@ func (ss *satelliteStream) Send(payload []byte) error {
 	return ss.stream.Send(&req)
 }
 
-// Close closes the stream.
+// Close the stream.
 func (ss *satelliteStream) Close() error {
 	atomic.StoreUint32(&ss.state, CLOSED)
 
@@ -101,6 +105,10 @@ func (ss *satelliteStream) Close() error {
 }
 
 func (ss *satelliteStream) recvLoop() {
+	// Initialize exponential back off settings.
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = MaxElapsedTime
+
 	for {
 		res, err := ss.stream.Recv()
 		if atomic.LoadUint32(&ss.state) == CLOSED {
@@ -109,16 +117,19 @@ func (ss *satelliteStream) recvLoop() {
 			return
 		}
 		if err != nil {
-			if err == io.EOF {
-				// Server closed the stream, try to reconnect.
-				err = ss.openStream()
-				if err != nil {
-					// Couldn't reconnect to the server, bailout.
-					log.Fatalf("error opening API stream: %v\n", err)
-				}
-			} else {
-				log.Fatalf("error reading from API stream: %v\n", err)
+			log.Println(err)
+			log.Println("connecting to to API stream...")
+
+			rcErr := backoff.RetryNotify(ss.openStream, b,
+				func(e error, duration time.Duration) {
+					log.Printf("%s. Automatically retrying in %v", e, duration)
+				})
+			if rcErr != nil {
+				// Couldn't reconnect to the server, bailout.
+				log.Fatalf("error connecting to API stream: %v\n", err)
 			}
+			log.Println("connected to API stream.")
+			continue
 		}
 
 		ss.streamId = res.StreamId

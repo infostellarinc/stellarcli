@@ -26,7 +26,7 @@ import (
 	"github.com/infostellarinc/stellarcli/pkg/config"
 )
 
-// NewDefaultCredentials initialies gRPC credentials using Stellar Default Credentials.
+// NewDefaultCredentials initialise gRPC credentials using Stellar Default Credentials.
 func NewDefaultCredentials() (credentials.PerRPCCredentials, error) {
 	return oauth.NewJWTAccessFromFile(findDefaultCredentials())
 }
