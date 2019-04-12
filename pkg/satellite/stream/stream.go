@@ -118,7 +118,7 @@ func (ss *satelliteStream) recvLoop() {
 		}
 		if err != nil {
 			log.Println(err)
-			log.Println("connecting to to API stream...")
+			log.Println("connecting to API stream...")
 
 			rcErr := backoff.RetryNotify(ss.openStream, b,
 				func(e error, duration time.Duration) {
