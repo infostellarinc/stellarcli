@@ -112,6 +112,18 @@ func (p *CSVPrinter) Write(r []interface{}) {
 	}
 }
 
+// Write a header.
+func (p *CSVPrinter) WriteHeader(t []TemplateItem) {
+	p.Write(GetLabels(t))
+}
+
+// Write fields with the template.
+func (p *CSVPrinter) WriteWithTemplate(r []map[string]interface{}, t []TemplateItem) {
+	for _, obj := range r {
+		p.Write(Flatten(obj, t))
+	}
+}
+
 // Create a CSVPrinterOptions with default values set.
 func NewCSVPrinterOptions(output io.Writer) CSVPrinterOptions {
 	return CSVPrinterOptions{

@@ -2,6 +2,7 @@ package printer
 
 import (
 	"bufio"
+	"encoding/json"
 	"io"
 	"log"
 )
@@ -38,8 +39,28 @@ func (p *JSONPrinter) Flush() {
 	}
 }
 
+// Write a header
+func (p *JSONPrinter) WriteHeader(t []TemplateItem) {
+	// Do nothing
+}
+
 func (p *JSONPrinter) Write(r []interface{}) {
 	log.Fatal("JSON printer has not been implemented yet.")
+}
+
+// Write fields with the template.
+func (p *JSONPrinter) WriteWithTemplate(r []map[string]interface{}, t []TemplateItem) {
+	jsonBytes, err := json.MarshalIndent(r, "", p.Options.Indent)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = p.writer.Write(jsonBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	p.writer.WriteString("\n")
 }
 
 func NewJSONPrinterOptions(output io.Writer) JSONPrinterOptions {
