@@ -92,7 +92,7 @@ func (ss *satelliteStream) Send(payload []byte) error {
 	return ss.stream.Send(&req)
 }
 
-// Close the stream.
+// Close closes the stream.
 func (ss *satelliteStream) Close() error {
 	atomic.StoreUint32(&ss.state, CLOSED)
 
