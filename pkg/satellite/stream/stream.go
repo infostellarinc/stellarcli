@@ -118,7 +118,7 @@ func (ss *satelliteStream) recvLoop() {
 		}
 		if err != nil {
 			log.Println(err)
-			log.Println("connecting to API stream...")
+			log.Println("reconnecting to the API stream.")
 
 			rcErr := backoff.RetryNotify(ss.openStream, b,
 				func(e error, duration time.Duration) {
@@ -128,7 +128,7 @@ func (ss *satelliteStream) recvLoop() {
 				// Couldn't reconnect to the server, bailout.
 				log.Fatalf("error connecting to API stream: %v\n", err)
 			}
-			log.Println("connected to API stream.")
+			log.Println("connected to the API stream.")
 			continue
 		}
 
