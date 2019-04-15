@@ -3,6 +3,7 @@ module github.com/infostellarinc/stellarcli
 require (
 	cloud.google.com/go v0.34.0 // indirect
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
+	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/golang/protobuf v1.2.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/infostellarinc/go-stellarstation v0.2.0
