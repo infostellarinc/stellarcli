@@ -120,7 +120,21 @@ func (ss *satelliteStream) recvLoop() {
 			log.Println(err)
 			log.Println("reconnecting to the API stream.")
 
-			rcErr := backoff.RetryNotify(ss.openStream, b,
+			rcErr := backoff.RetryNotify(func() error {
+				err := ss.openStream()
+				if err != nil {
+					return err
+				}
+
+				var recvErr error
+				response, err := ss.stream.Recv()
+				if recvErr != nil {
+					return recvErr
+				}
+				res = response
+
+				return nil
+			}, b,
 				func(e error, duration time.Duration) {
 					log.Printf("%s. Automatically retrying in %v", e, duration)
 				})
@@ -129,9 +143,7 @@ func (ss *satelliteStream) recvLoop() {
 				log.Fatalf("error connecting to API stream: %v\n", err)
 			}
 			log.Println("connected to the API stream.")
-			continue
 		}
-
 		ss.streamId = res.StreamId
 
 		switch res.Response.(type) {
