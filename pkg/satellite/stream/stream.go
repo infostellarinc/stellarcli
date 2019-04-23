@@ -126,10 +126,9 @@ func (ss *satelliteStream) recvLoop() {
 					return err
 				}
 
-				var recvErr error
 				response, err := ss.stream.Recv()
-				if recvErr != nil {
-					return recvErr
+				if err != nil {
+					return err
 				}
 				res = response
 
