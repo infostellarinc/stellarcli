@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
+	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 )
 
@@ -37,6 +38,7 @@ const MaxElapsedTime = 60 * time.Second
 
 type SatelliteStreamOptions struct {
 	AcceptedFraming []stellarstation.Framing
+	AcceptedPlanId  []string
 	SatelliteID     string
 	IsVerbose       bool
 }
@@ -58,8 +60,9 @@ type satelliteStream struct {
 	recvChan           chan<- []byte
 	recvLoopClosedChan chan struct{}
 
-	state     uint32
-	isVerbose bool
+	state          uint32
+	isVerbose      bool
+	acceptedPlanId []string
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
@@ -72,6 +75,7 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		state:              OPEN,
 		recvLoopClosedChan: make(chan struct{}),
 		isVerbose:          o.IsVerbose,
+		acceptedPlanId:     o.AcceptedPlanId,
 	}
 
 	err := s.start()
@@ -147,13 +151,23 @@ func (ss *satelliteStream) recvLoop() {
 
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
+			planId := res.GetReceiveTelemetryResponse().PlanId
+			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
+				break
+			}
+
 			payload := res.GetReceiveTelemetryResponse().Telemetry.Data
 			ss.recvChan <- payload
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
+			planId := res.GetStreamEvent().GetPlanMonitoringEvent().PlanId
+			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
+				break
+			}
+
 			if ss.isVerbose {
 				if gsState := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gsState != nil {
 					if a := gsState.Antenna; a != nil {
-						log.Printf("azimuth: %v, elevation: %v\n", a.Azimuth.Measured, a.Elevation.Measured)
+						log.Printf("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
 					}
 
 					if rcv := gsState.Receiver; rcv != nil {
