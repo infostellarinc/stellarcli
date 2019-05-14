@@ -8,7 +8,7 @@ buildscript {
         mavenLocal()
     }
     dependencies {
-        classpath "org.curioswitch.curiostack:gradle-golang-plugin:0.0.15"
+        classpath "org.curioswitch.curiostack:gradle-golang-plugin:0.0.18"
     }
 }
 
