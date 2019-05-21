@@ -40,6 +40,7 @@ type SatelliteStreamOptions struct {
 	AcceptedFraming []stellarstation.Framing
 	AcceptedPlanId  []string
 	SatelliteID     string
+	IsDebug         bool
 	IsVerbose       bool
 }
 
@@ -61,6 +62,7 @@ type satelliteStream struct {
 	recvLoopClosedChan chan struct{}
 
 	state          uint32
+	isDebug        bool
 	isVerbose      bool
 	acceptedPlanId []string
 }
@@ -74,6 +76,7 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		recvChan:           recvChan,
 		state:              OPEN,
 		recvLoopClosedChan: make(chan struct{}),
+		isDebug:            o.IsDebug,
 		isVerbose:          o.IsVerbose,
 		acceptedPlanId:     o.AcceptedPlanId,
 	}
@@ -93,6 +96,11 @@ func (ss *satelliteStream) Send(payload []byte) error {
 			},
 		},
 	}
+
+	if ss.isDebug {
+		log.Printf("sent data: size: %d bytes\n", len(payload))
+	}
+
 	return ss.stream.Send(&req)
 }
 
@@ -156,7 +164,11 @@ func (ss *satelliteStream) recvLoop() {
 				break
 			}
 
-			payload := res.GetReceiveTelemetryResponse().Telemetry.Data
+			telemetry := res.GetReceiveTelemetryResponse().Telemetry
+			payload := telemetry.Data
+			if ss.isDebug {
+				log.Printf("received data: planId: %s, framing type: %s, size: %d bytes\n", planId, telemetry.Framing, len(payload))
+			}
 			ss.recvChan <- payload
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
 			planId := res.GetStreamEvent().GetPlanMonitoringEvent().PlanId
