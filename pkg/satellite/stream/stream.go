@@ -97,7 +97,7 @@ func (ss *satelliteStream) Send(payload []byte) error {
 		},
 	}
 
-	if ss.isDebug {
+	if ss.isVerbose {
 		log.Printf("sent data: size: %d bytes\n", len(payload))
 	}
 
