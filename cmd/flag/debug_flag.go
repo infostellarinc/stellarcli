@@ -31,7 +31,7 @@ func (f *DebugFlag) Validate() error {
 	return nil
 }
 
-// Create a new VerboseFlags.
+// Create a new DebugFlag.
 func NewDebugFlag() *DebugFlag {
 	return &DebugFlag{}
 }
