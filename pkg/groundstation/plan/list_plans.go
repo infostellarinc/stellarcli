@@ -88,12 +88,19 @@ func ListPlans(o *ListOptions) {
 			log.Fatal(err)
 		}
 
+		var downlinkFreq, uplinkFreq uint64
+		if plan.DownlinkRadioDevice != nil {
+			downlinkFreq = plan.DownlinkRadioDevice.CenterFrequencyHz
+		}
+		if plan.UplinkRadioDevice != nil {
+			uplinkFreq = plan.UplinkRadioDevice.CenterFrequencyHz
+		}
 		record := []interface{}{
 			plan.PlanId,
 			aos,
 			los,
-			plan.DownlinkRadioDevice.CenterFrequencyHz,
-			plan.UplinkRadioDevice.CenterFrequencyHz,
+			downlinkFreq,
+			uplinkFreq,
 			plan.Tle.Line_1,
 			plan.Tle.Line_2,
 		}
