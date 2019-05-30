@@ -42,14 +42,20 @@ type UDPProxyOptions struct {
 func NewUDPProxy(o *UDPProxyOptions) (Proxy, error) {
 	rc, err := net.ListenPacket("udp", o.RecvAddr)
 	if err != nil {
-		rc.Close()
+		if rc != nil {
+			rc.Close()
+		}
 		return nil, err
 	}
 
 	sc, err := net.Dial("udp", o.SendAddr)
 	if err != nil {
-		rc.Close()
-		sc.Close()
+		if rc != nil {
+			rc.Close()
+		}
+		if sc != nil {
+			sc.Close()
+		}
 		return nil, err
 	}
 
