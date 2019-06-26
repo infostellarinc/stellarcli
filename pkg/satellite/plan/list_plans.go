@@ -1,4 +1,4 @@
-// Copyright © 2018 Infostellar, Inc.
+// Copyright © 2019 Infostellar, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,20 +26,21 @@ import (
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 
-// Headers of columns
-var headers = []interface{}{
-	"ID",
-	"SATELLITE_ID",
-	"STATUS",
-	"AOS_TIME",
-	"LOS_TIME",
-	"GS_LAT",
-	"GS_LONG",
-	"GS_COUNTRY",
-	"MAX_ELEVATION_DEGREE",
-	"MAX_ELEVATION_TIME",
-	"DL_FREQ_HZ",
-	"UL_FREQ_HZ",
+var listPlansTemplate = []printer.TemplateItem{
+	{"ID", "id"},
+	{"SATELLITE_ID", "satelliteId"},
+	{"CHANNEL_SET_NAME", "channelSet.name"},
+	{"CHANNEL_SET_ID", "channelSet.id"},
+	{"STATUS", "status"},
+	{"AOS_TIME", "aos"},
+	{"LOS_TIME", "los"},
+	{"GS_LAT", "gsInfo.gsLat"},
+	{"GS_LONG", "gsInfo.gsLong"},
+	{"GS_COUNTRY", "gsInfo.gsCountry"},
+	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
+	{"MAX_ELEVATION_TIME", "maxElevationTime"},
+	{"DL_FREQ_HZ", "downlinkFrequency"},
+	{"UL_FREQ_HZ", "uplinkFrequency"},
 }
 
 type ListOptions struct {
@@ -79,9 +80,12 @@ func ListPlans(o *ListOptions) {
 		log.Fatal(err)
 	}
 
-	defer o.Printer.Flush()
-	o.Printer.Write(headers)
+	targetTemplate := listPlansTemplate
 
+	defer o.Printer.Flush()
+	o.Printer.WriteHeader(targetTemplate)
+
+	var results []map[string]interface{}
 	for _, plan := range result.Plan {
 		aos, err := ptypes.Timestamp(plan.AosTime)
 		if err != nil {
@@ -98,20 +102,31 @@ func ListPlans(o *ListOptions) {
 			log.Fatal(err)
 		}
 
-		record := []interface{}{
-			plan.Id,
-			plan.SatelliteId,
-			plan.Status,
-			aos,
-			los,
-			plan.GroundStationLatitude,
-			plan.GroundStationLongitude,
-			plan.GroundStationCountryCode,
-			plan.MaxElevationDegrees,
-			maxElevationTime,
-			plan.DownlinkCenterFrequencyHz,
-			plan.UplinkCenterFrequencyHz,
+		obj := map[string]interface{}{
+			"id":          plan.Id,
+			"satelliteId": plan.SatelliteId,
+			"channelSet": map[string]interface{}{
+				"id":   plan.ChannelSet.Id,
+				"name": plan.ChannelSet.Name,
+			},
+			"status": plan.Status,
+			"aos":    aos,
+			"los":    los,
+			"gsInfo": map[string]interface{}{
+				"gsLat":     plan.GroundStationLatitude,
+				"gsLong":    plan.GroundStationLongitude,
+				"gsCountry": plan.GroundStationCountryCode,
+			},
+			"maxElevationDegree": plan.MaxElevationDegrees,
+			"maxElevationTime":   maxElevationTime,
+			// TODO(hoshir): fill frequencies.
+			// Since the current version of the API does't provide a way to fetch
+			// frequencies of downlink and uplink for a channel, we set empty for those temporarily.
+			"downlinkFrequency": "",
+			"uplinkFrequency":   "",
 		}
-		o.Printer.Write(record)
+
+		results = append(results, obj)
 	}
+	o.Printer.WriteWithTemplate(results, targetTemplate)
 }

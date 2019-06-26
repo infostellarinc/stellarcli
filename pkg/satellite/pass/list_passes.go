@@ -1,4 +1,4 @@
-// Copyright © 2018 Infostellar, Inc.
+// Copyright © 2019 Infostellar, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,8 +34,10 @@ var listPassesVerboseTemplate = []printer.TemplateItem{
 	{"GS_COUNTRY", "gsInfo.gsCountry"},
 	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
 	{"MAX_ELEVATION_TIME", "maxElevationTime"},
-	{"DOWNLINK_CENTER_FREQUENCY_HZ", "downlinkFrequency"},
-	{"UPLINK_CENTER_FREQUENCY_HZ", "uplinkFrequency"},
+	{"CHANNEL_SET_ID", "channelSet.id"},
+	{"CHANNEL_SET_NAME", "channelSet.name"},
+	{"DL_FREQ_HZ", "downlinkFrequency"},
+	{"UL_FREQ_HZ", "uplinkFrequency"},
 }
 
 var listPassesTemplate = []printer.TemplateItem{
@@ -45,8 +47,9 @@ var listPassesTemplate = []printer.TemplateItem{
 	{"GS_LONG", "gsInfo.gsLong"},
 	{"GS_COUNTRY", "gsInfo.gsCountry"},
 	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
-	{"DOWNLINK_CENTER_FREQUENCY_HZ", "downlinkFrequency"},
-	{"UPLINK_CENTER_FREQUENCY_HZ", "uplinkFrequency"},
+	{"CHANNEL_SET_NAME", "channelSet.name"},
+	{"DL_FREQ_HZ", "downlinkFrequency"},
+	{"UL_FREQ_HZ", "uplinkFrequency"},
 }
 
 type ListAvailablePassesOptions struct {
@@ -98,22 +101,32 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 		}
 
 		if pass.MaxElevationDegrees > o.MinElevation {
-			obj := map[string]interface{}{
-				"reservationToken": pass.ReservationToken,
-				"aos":              aos,
-				"los":              los,
-				"gsInfo": map[string]interface{}{
-					"gsLat":     pass.GroundStationLatitude,
-					"gsLong":    pass.GroundStationLongitude,
-					"gsCountry": pass.GroundStationCountryCode,
-				},
-				"maxElevationDegree": pass.MaxElevationDegrees,
-				"maxElevationTime":   maxElevationTime,
-				"downlinkFrequency":  pass.DownlinkCenterFrequencyHz,
-				"uplinkFrequency":    pass.UplinkCenterFrequencyHz,
-			}
+			channelSetTokens := pass.ChannelSetToken
+			for _, channelSetToken := range channelSetTokens {
+				obj := map[string]interface{}{
+					"reservationToken": channelSetToken.ReservationToken,
+					"aos":              aos,
+					"los":              los,
+					"gsInfo": map[string]interface{}{
+						"gsLat":     pass.GroundStationLatitude,
+						"gsLong":    pass.GroundStationLongitude,
+						"gsCountry": pass.GroundStationCountryCode,
+					},
+					"maxElevationDegree": pass.MaxElevationDegrees,
+					"maxElevationTime":   maxElevationTime,
+					"channelSet": map[string]interface{}{
+						"id":   channelSetToken.ChannelSet.Id,
+						"name": channelSetToken.ChannelSet.Name,
+					},
+					// TODO(hoshir): fill frequencies.
+					// Since the current version of the API does't provide a way to fetch
+					// frequencies of downlink and uplink for a channel, we set empty for those temporarily.
+					"downlinkFrequency": "",
+					"uplinkFrequency":   "",
+				}
 
-			results = append(results, obj)
+				results = append(results, obj)
+			}
 		}
 	}
 	o.Printer.WriteWithTemplate(results, targetTemplate)
