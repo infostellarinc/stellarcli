@@ -125,7 +125,6 @@ func ListPlans(o *ListOptions) {
 			"downlinkFrequency": "",
 			"uplinkFrequency":   "",
 		}
-
 		results = append(results, obj)
 	}
 	o.Printer.WriteWithTemplate(results, targetTemplate)
