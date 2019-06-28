@@ -29,6 +29,8 @@ import (
 var listPlansTemplate = []printer.TemplateItem{
 	{"ID", "id"},
 	{"SATELLITE_ID", "satelliteId"},
+	{"CHANNEL_SET_NAME", "channelSet.name"},
+	{"CHANNEL_SET_ID", "channelSet.id"},
 	{"STATUS", "status"},
 	{"AOS_TIME", "aos"},
 	{"LOS_TIME", "los"},
@@ -103,9 +105,13 @@ func ListPlans(o *ListOptions) {
 		obj := map[string]interface{}{
 			"id":          plan.Id,
 			"satelliteId": plan.SatelliteId,
-			"status":      plan.Status,
-			"aos":         aos,
-			"los":         los,
+			"channelSet": map[string]interface{}{
+				"id":   plan.ChannelSet.Id,
+				"name": plan.ChannelSet.Name,
+			},
+			"status": plan.Status,
+			"aos":    aos,
+			"los":    los,
 			"gsInfo": map[string]interface{}{
 				"gsLat":     plan.GroundStationLatitude,
 				"gsLong":    plan.GroundStationLongitude,
@@ -113,8 +119,11 @@ func ListPlans(o *ListOptions) {
 			},
 			"maxElevationDegree": plan.MaxElevationDegrees,
 			"maxElevationTime":   maxElevationTime,
-			"downlinkFrequency":  plan.DownlinkCenterFrequencyHz,
-			"uplinkFrequency":    plan.UplinkCenterFrequencyHz,
+			// TODO(hoshir): fill frequencies.
+			// Since the current version of the API does't provide a way to fetch
+			// frequencies of downlink and uplink for a channel, we set empty for those temporarily.
+			"downlinkFrequency": "",
+			"uplinkFrequency":   "",
 		}
 		results = append(results, obj)
 	}
