@@ -102,24 +102,30 @@ func ListPlans(o *ListOptions) {
 			log.Fatal(err)
 		}
 
+		channelSet := plan.ChannelSet
+		downlink := make(map[string]interface{})
+		if channelSet.Downlink != nil {
+			downlink["frequency"] = channelSet.Downlink.CenterFrequencyHz
+			downlink["modulation"] = channelSet.Downlink.Modulation
+			downlink["protocol"] = channelSet.Downlink.Protocol
+			downlink["bitrate"] = channelSet.Downlink.Bitrate
+		}
+		uplink := make(map[string]interface{})
+		if channelSet.Uplink != nil {
+			uplink["frequency"] = channelSet.Uplink.CenterFrequencyHz
+			uplink["modulation"] = channelSet.Uplink.Modulation
+			uplink["protocol"] = channelSet.Uplink.Protocol
+			uplink["bitrate"] = channelSet.Uplink.Bitrate
+		}
+
 		obj := map[string]interface{}{
 			"id":          plan.Id,
 			"satelliteId": plan.SatelliteId,
 			"channelSet": map[string]interface{}{
-				"id":   plan.ChannelSet.Id,
-				"name": plan.ChannelSet.Name,
-				"downlink": map[string]interface{}{
-					"frequency":  plan.ChannelSet.Downlink.CenterFrequencyHz,
-					"modulation": plan.ChannelSet.Downlink.Modulation,
-					"protocol":   plan.ChannelSet.Downlink.Protocol,
-					"bitrate":    plan.ChannelSet.Downlink.Bitrate,
-				},
-				"uplink": map[string]interface{}{
-					"frequency":  plan.ChannelSet.Uplink.CenterFrequencyHz,
-					"modulation": plan.ChannelSet.Uplink.Modulation,
-					"protocol":   plan.ChannelSet.Uplink.Protocol,
-					"bitrate":    plan.ChannelSet.Uplink.Bitrate,
-				},
+				"id":       plan.ChannelSet.Id,
+				"name":     plan.ChannelSet.Name,
+				"downlink": downlink,
+				"uplink":   uplink,
 			},
 			"status": plan.Status,
 			"aos":    aos,

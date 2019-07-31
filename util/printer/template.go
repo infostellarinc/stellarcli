@@ -31,7 +31,9 @@ func Flatten(obj map[string]interface{}, t []TemplateItem) []interface{} {
 	flattened := make([]interface{}, len(t))
 	for i, item := range t {
 		err, v := GetValue(obj, item.Path)
-		if err == nil {
+		if err != nil {
+			flattened[i] = ""
+		} else {
 			flattened[i] = v
 		}
 	}

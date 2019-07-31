@@ -107,6 +107,23 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 		if pass.MaxElevationDegrees > o.MinElevation {
 			channelSetTokens := pass.ChannelSetToken
 			for _, channelSetToken := range channelSetTokens {
+				channelSet := channelSetToken.ChannelSet
+
+				downlink := make(map[string]interface{})
+				if channelSet.Downlink != nil {
+					downlink["frequency"] = channelSet.Downlink.CenterFrequencyHz
+					downlink["modulation"] = channelSet.Downlink.Modulation
+					downlink["protocol"] = channelSet.Downlink.Protocol
+					downlink["bitrate"] = channelSet.Downlink.Bitrate
+				}
+				uplink := make(map[string]interface{})
+				if channelSet.Uplink != nil {
+					uplink["frequency"] = channelSet.Uplink.CenterFrequencyHz
+					uplink["modulation"] = channelSet.Uplink.Modulation
+					uplink["protocol"] = channelSet.Uplink.Protocol
+					uplink["bitrate"] = channelSet.Uplink.Bitrate
+				}
+
 				obj := map[string]interface{}{
 					"reservationToken": channelSetToken.ReservationToken,
 					"aos":              aos,
@@ -119,20 +136,10 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 					"maxElevationDegree": pass.MaxElevationDegrees,
 					"maxElevationTime":   maxElevationTime,
 					"channelSet": map[string]interface{}{
-						"id":   channelSetToken.ChannelSet.Id,
-						"name": channelSetToken.ChannelSet.Name,
-						"downlink": map[string]interface{}{
-							"frequency":  channelSetToken.ChannelSet.Downlink.CenterFrequencyHz,
-							"modulation": channelSetToken.ChannelSet.Downlink.Modulation,
-							"protocol":   channelSetToken.ChannelSet.Downlink.Protocol,
-							"bitrate":    channelSetToken.ChannelSet.Downlink.Bitrate,
-						},
-						"uplink": map[string]interface{}{
-							"frequency":  channelSetToken.ChannelSet.Uplink.CenterFrequencyHz,
-							"modulation": channelSetToken.ChannelSet.Uplink.Modulation,
-							"protocol":   channelSetToken.ChannelSet.Uplink.Protocol,
-							"bitrate":    channelSetToken.ChannelSet.Uplink.Bitrate,
-						},
+						"id":       channelSet.Id,
+						"name":     channelSet.Name,
+						"downlink": downlink,
+						"uplink":   uplink,
 					},
 				}
 
