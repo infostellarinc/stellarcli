@@ -39,8 +39,8 @@ var listPlansTemplate = []printer.TemplateItem{
 	{"GS_COUNTRY", "gsInfo.gsCountry"},
 	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
 	{"MAX_ELEVATION_TIME", "maxElevationTime"},
-	{"DL_FREQ_HZ", "downlinkFrequency"},
-	{"UL_FREQ_HZ", "uplinkFrequency"},
+	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
+	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
 }
 
 type ListOptions struct {
@@ -108,6 +108,18 @@ func ListPlans(o *ListOptions) {
 			"channelSet": map[string]interface{}{
 				"id":   plan.ChannelSet.Id,
 				"name": plan.ChannelSet.Name,
+				"downlink": map[string]interface{}{
+					"frequency":  plan.ChannelSet.Downlink.CenterFrequencyHz,
+					"modulation": plan.ChannelSet.Downlink.Modulation,
+					"protocol":   plan.ChannelSet.Downlink.Protocol,
+					"bitrate":    plan.ChannelSet.Downlink.Bitrate,
+				},
+				"uplink": map[string]interface{}{
+					"frequency":  plan.ChannelSet.Uplink.CenterFrequencyHz,
+					"modulation": plan.ChannelSet.Uplink.Modulation,
+					"protocol":   plan.ChannelSet.Uplink.Protocol,
+					"bitrate":    plan.ChannelSet.Uplink.Bitrate,
+				},
 			},
 			"status": plan.Status,
 			"aos":    aos,
@@ -119,11 +131,6 @@ func ListPlans(o *ListOptions) {
 			},
 			"maxElevationDegree": plan.MaxElevationDegrees,
 			"maxElevationTime":   maxElevationTime,
-			// TODO(hoshir): fill frequencies.
-			// Since the current version of the API does't provide a way to fetch
-			// frequencies of downlink and uplink for a channel, we set empty for those temporarily.
-			"downlinkFrequency": "",
-			"uplinkFrequency":   "",
 		}
 		results = append(results, obj)
 	}

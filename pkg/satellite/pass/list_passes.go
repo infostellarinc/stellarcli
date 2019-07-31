@@ -36,8 +36,12 @@ var listPassesVerboseTemplate = []printer.TemplateItem{
 	{"MAX_ELEVATION_TIME", "maxElevationTime"},
 	{"CHANNEL_SET_ID", "channelSet.id"},
 	{"CHANNEL_SET_NAME", "channelSet.name"},
-	{"DL_FREQ_HZ", "downlinkFrequency"},
-	{"UL_FREQ_HZ", "uplinkFrequency"},
+	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
+	{"DL_MODULATION", "channelSet.downlink.modulation"},
+	{"DL_BITRATE", "channelSet.downlink.bitrate"},
+	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
+	{"UL_MODULATION", "channelSet.uplink.modulation"},
+	{"UL_BITRATE", "channelSet.uplink.bitrate"},
 }
 
 var listPassesTemplate = []printer.TemplateItem{
@@ -48,8 +52,8 @@ var listPassesTemplate = []printer.TemplateItem{
 	{"GS_COUNTRY", "gsInfo.gsCountry"},
 	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
 	{"CHANNEL_SET_NAME", "channelSet.name"},
-	{"DL_FREQ_HZ", "downlinkFrequency"},
-	{"UL_FREQ_HZ", "uplinkFrequency"},
+	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
+	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
 }
 
 type ListAvailablePassesOptions struct {
@@ -117,12 +121,19 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 					"channelSet": map[string]interface{}{
 						"id":   channelSetToken.ChannelSet.Id,
 						"name": channelSetToken.ChannelSet.Name,
+						"downlink": map[string]interface{}{
+							"frequency":  channelSetToken.ChannelSet.Downlink.CenterFrequencyHz,
+							"modulation": channelSetToken.ChannelSet.Downlink.Modulation,
+							"protocol":   channelSetToken.ChannelSet.Downlink.Protocol,
+							"bitrate":    channelSetToken.ChannelSet.Downlink.Bitrate,
+						},
+						"uplink": map[string]interface{}{
+							"frequency":  channelSetToken.ChannelSet.Uplink.CenterFrequencyHz,
+							"modulation": channelSetToken.ChannelSet.Uplink.Modulation,
+							"protocol":   channelSetToken.ChannelSet.Uplink.Protocol,
+							"bitrate":    channelSetToken.ChannelSet.Uplink.Bitrate,
+						},
 					},
-					// TODO(hoshir): fill frequencies.
-					// Since the current version of the API does't provide a way to fetch
-					// frequencies of downlink and uplink for a channel, we set empty for those temporarily.
-					"downlinkFrequency": "",
-					"uplinkFrequency":   "",
 				}
 
 				results = append(results, obj)
