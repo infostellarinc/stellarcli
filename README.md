@@ -3,7 +3,7 @@
 A command line utility for accessing the [StellarStation API](https://github.com/infostellarinc/stellarstation-api).
 Let's build stellar apps together!
 
-## Using the app
+## Download
 
 Precompiled binaries of the app can be found on the [releases page](https://github.com/infostellarinc/stellarcli/releases).
 
@@ -25,6 +25,10 @@ $ stellar auth activate-api-key path/to/stellarstation-private-key.json
 ```
 
 All commands after that will be authenticated using that key.
+
+## Documentation
+
+[Documentation](/docs/stellar.md) page describes more detail of stellar commands.
 
 ## Developing
 
