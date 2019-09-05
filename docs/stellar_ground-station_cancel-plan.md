@@ -1,19 +1,19 @@
-## stellar ground-station delete-uw
+## stellar ground-station cancel-plan
 
-Deletes unavailability windows on a ground station.
+Cancel a plan.
 
 ### Synopsis
 
-Deletes an unavailability windows on a ground station.
+Cancel a plan for an antenna. Plan ID can be fetched with list-plans command.
 
 ```
-stellar ground-station delete-uw [Window ID] [flags]
+stellar ground-station cancel-plan [Plan ID] [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help            help for delete-uw
+  -h, --help            help for cancel-plan
   -o, --output string   Output format. One of: csv|wide|json (default "wide")
 ```
 
