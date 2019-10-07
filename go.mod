@@ -13,6 +13,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
 	golang.org/x/sys v0.0.0-20190624142023-c5567b49c5d0 // indirect
+	google.golang.org/api v0.10.0
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/genproto v0.0.0-20190620144150-6af8c5fc6601 // indirect
 	google.golang.org/grpc v1.21.1

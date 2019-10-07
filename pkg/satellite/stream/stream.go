@@ -16,8 +16,12 @@ package stream
 
 import (
 	"context"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/api/support/bundler"
 	"io"
 	"log"
+	"sort"
 	"sync/atomic"
 	"time"
 
@@ -42,6 +46,11 @@ type SatelliteStreamOptions struct {
 	SatelliteID     string
 	IsDebug         bool
 	IsVerbose       bool
+
+	CorrectOrder             bool
+	BundleCountThreshold     int
+	BundleByteThreshold      int
+	DelayThresholdInMilliSec int
 }
 
 type SatelliteStream interface {
@@ -65,6 +74,11 @@ type satelliteStream struct {
 	isDebug        bool
 	isVerbose      bool
 	acceptedPlanId []string
+
+	correctOrder             bool
+	bundleCountThreshold     int
+	bundleByteThreshold      int
+	delayThresholdInMilliSec int
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
@@ -79,6 +93,11 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		isDebug:            o.IsDebug,
 		isVerbose:          o.IsVerbose,
 		acceptedPlanId:     o.AcceptedPlanId,
+
+		correctOrder:             o.CorrectOrder,
+		bundleCountThreshold:     o.BundleCountThreshold,
+		bundleByteThreshold:      o.BundleByteThreshold,
+		delayThresholdInMilliSec: o.DelayThresholdInMilliSec,
 	}
 
 	err := s.start()
@@ -120,6 +139,33 @@ func (ss *satelliteStream) recvLoop() {
 	// Initialize exponential back off settings.
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
+
+	payloadBundler := bundler.NewBundler((*stellarstation.Telemetry)(nil), func(bundle interface{}) {
+		telemetries := bundle.([]*stellarstation.Telemetry)
+		lessFunc := func(i, j int) bool {
+			time1, err := ptypes.Timestamp(telemetries[i].TimeFirstByteReceived)
+			if err != nil {
+				log.Fatal(err)
+			}
+			time2, err := ptypes.Timestamp(telemetries[j].TimeFirstByteReceived)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			return time1.Before(time2)
+		}
+		if !sort.SliceIsSorted(telemetries, lessFunc) {
+			sort.SliceStable(telemetries, lessFunc)
+		}
+
+		for _, telemetry := range telemetries {
+			ss.recvChan <- telemetry.Data
+		}
+	})
+	payloadBundler.DelayThreshold = time.Duration(ss.delayThresholdInMilliSec) * time.Millisecond
+	payloadBundler.BundleCountThreshold = ss.bundleCountThreshold
+	payloadBundler.BundleByteThreshold = ss.bundleByteThreshold
+	payloadBundler.BufferedByteLimit = 1e9 // 1G
 
 	for {
 		res, err := ss.stream.Recv()
@@ -169,7 +215,11 @@ func (ss *satelliteStream) recvLoop() {
 			if ss.isDebug {
 				log.Printf("received data: planId: %s, framing type: %s, size: %d bytes\n", planId, telemetry.Framing, len(payload))
 			}
-			ss.recvChan <- payload
+			if ss.correctOrder {
+				payloadBundler.Add(telemetry, proto.Size(telemetry))
+			} else {
+				ss.recvChan <- payload
+			}
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
 			planId := res.GetStreamEvent().GetPlanMonitoringEvent().PlanId
 			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
