@@ -39,11 +39,12 @@ var (
 // Create open-stream command.
 func NewOpenStreamCommand() *cobra.Command {
 	debugFlag := flag.NewDebugFlag()
+	correctOrderFlags := flag.NewCorrectOrderFlags()
 	framingFlags := flag.NewFramingFlags()
 	planIdFlag := flag.NewPlanIdFlag()
 	proxyFlags := flag.NewProxyFlags()
 	verboseFlag := flag.NewVerboseFlags()
-	flags := flag.NewFlagSet(debugFlag, framingFlags, planIdFlag, proxyFlags, verboseFlag)
+	flags := flag.NewFlagSet(correctOrderFlags, debugFlag, framingFlags, planIdFlag, proxyFlags, verboseFlag)
 
 	command := &cobra.Command{
 		Use:   openStreamUse,
@@ -70,6 +71,11 @@ func NewOpenStreamCommand() *cobra.Command {
 				AcceptedPlanId:  planIdFlag.AcceptedPlanId,
 				IsDebug:         debugFlag.IsDebug,
 				IsVerbose:       verboseFlag.IsVerbose,
+
+				CorrectOrder:         correctOrderFlags.CorrectOrder,
+				BundleCountThreshold: correctOrderFlags.BundleCountThreshold,
+				BundleByteThreshold:  correctOrderFlags.BundleByteThreshold,
+				DelayThreshold:       correctOrderFlags.DelayThreshold,
 			}
 
 			c := make(chan os.Signal)
