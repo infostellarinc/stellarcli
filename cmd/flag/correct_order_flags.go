@@ -45,7 +45,7 @@ func (f *CorrectOrderFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVarP(&f.DelayThreshold, "delay-threshold", "", defaultDelayThreshold,
 		"The maximum amount of time that packets remain in the sorting pool.")
 	cmd.Flags().IntVarP(&f.BundleCountThreshold, "count-threshold", "", defaultBundleCountThreshold,
-		"The maximum number of packets that will be sorted.")
+		"The maximum number of packets in the sorting pool.")
 	cmd.Flags().IntVarP(&f.BundleByteThreshold, "byte-threshold", "", defaultBundleByteThreshold,
 		"The maximum size of the sorting pool in bytes.")
 	cmd.Flags().BoolVarP(&f.CorrectOrder, "correct-order", "", defaultCorrectOrder,
