@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-
-	"github.com/infostellarinc/go-stellarstation/api/v1"
 )
 
 var (
@@ -49,7 +47,7 @@ func (f *CorrectOrderFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().IntVarP(&f.BundleByteThreshold, "byte-threshold", "", defaultBundleByteThreshold,
 		"The maximum size of the sorting pool in bytes.")
 	cmd.Flags().BoolVarP(&f.CorrectOrder, "correct-order", "", defaultCorrectOrder,
-		"When set to true, packets will be reordered by time_first_byte_received.")
+		"When set to true, packets will be sorted by time_first_byte_received.")
 }
 
 // Validate flag values.
@@ -57,12 +55,8 @@ func (f *CorrectOrderFlags) Validate() error {
 	return nil
 }
 
-// Create a new FramingFlags with default values set.
+// Create a new CorrectOrderFlags with default values set.
 func NewCorrectOrderFlags() *CorrectOrderFlags {
-	for value := range v1.Framing_value {
-		availableFramings = append(availableFramings, value)
-	}
-
 	return &CorrectOrderFlags{
 		CorrectOrder: defaultCorrectOrder,
 	}
