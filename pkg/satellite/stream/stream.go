@@ -47,10 +47,10 @@ type SatelliteStreamOptions struct {
 	IsDebug         bool
 	IsVerbose       bool
 
-	CorrectOrder             bool
-	BundleCountThreshold     int
-	BundleByteThreshold      int
-	DelayThresholdInMilliSec int
+	CorrectOrder         bool
+	BundleCountThreshold int
+	BundleByteThreshold  int
+	DelayThreshold       time.Duration
 }
 
 type SatelliteStream interface {
@@ -75,10 +75,10 @@ type satelliteStream struct {
 	isVerbose      bool
 	acceptedPlanId []string
 
-	correctOrder             bool
-	bundleCountThreshold     int
-	bundleByteThreshold      int
-	delayThresholdInMilliSec int
+	correctOrder         bool
+	bundleCountThreshold int
+	bundleByteThreshold  int
+	delayThreshold       time.Duration
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
@@ -94,10 +94,10 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		isVerbose:          o.IsVerbose,
 		acceptedPlanId:     o.AcceptedPlanId,
 
-		correctOrder:             o.CorrectOrder,
-		bundleCountThreshold:     o.BundleCountThreshold,
-		bundleByteThreshold:      o.BundleByteThreshold,
-		delayThresholdInMilliSec: o.DelayThresholdInMilliSec,
+		correctOrder:         o.CorrectOrder,
+		bundleCountThreshold: o.BundleCountThreshold,
+		bundleByteThreshold:  o.BundleByteThreshold,
+		delayThreshold:       o.DelayThreshold,
 	}
 
 	err := s.start()
@@ -162,7 +162,7 @@ func (ss *satelliteStream) recvLoop() {
 			ss.recvChan <- telemetry.Data
 		}
 	})
-	payloadBundler.DelayThreshold = time.Duration(ss.delayThresholdInMilliSec) * time.Millisecond
+	payloadBundler.DelayThreshold = ss.delayThreshold
 	payloadBundler.BundleCountThreshold = ss.bundleCountThreshold
 	payloadBundler.BundleByteThreshold = ss.bundleByteThreshold
 	payloadBundler.BufferedByteLimit = 1e9 // 1G
