@@ -16,9 +16,6 @@ package stream
 
 import (
 	"context"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"google.golang.org/api/support/bundler"
 	"io"
 	"log"
 	"sort"
@@ -26,6 +23,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/api/support/bundler"
 	"google.golang.org/grpc"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
