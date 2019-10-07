@@ -40,9 +40,12 @@ type CorrectOrderFlags struct {
 
 // Add flags to the command.
 func (f *CorrectOrderFlags) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().IntVarP(&f.DelayThreshold, "delay-threshold", "", defaultDelayThreshold, "usage")
-	cmd.Flags().IntVarP(&f.BundleCountThreshold, "count-threshold", "", defaultBundleCountThreshold, "usage")
-	cmd.Flags().IntVarP(&f.BundleByteThreshold, "byte-threshold", "", defaultBundleByteThreshold, "usage")
+	cmd.Flags().IntVarP(&f.DelayThreshold, "delay-threshold", "", defaultDelayThreshold,
+		"The maximum amount of time in milliseconds that packets remain in the sorting pool.")
+	cmd.Flags().IntVarP(&f.BundleCountThreshold, "count-threshold", "", defaultBundleCountThreshold,
+		"The maximum number of packets that will be sorted.")
+	cmd.Flags().IntVarP(&f.BundleByteThreshold, "byte-threshold", "", defaultBundleByteThreshold,
+		"The maximum number of bytes of packets that will be sorted.")
 	cmd.Flags().BoolVarP(&f.CorrectOrder, "correct-order", "", defaultCorrectOrder,
 		"Reordering packets by time_first_byte_received when set to true.")
 }
