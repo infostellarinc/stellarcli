@@ -47,7 +47,7 @@ func (f *CorrectOrderFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().IntVarP(&f.BundleCountThreshold, "count-threshold", "", defaultBundleCountThreshold,
 		"The maximum number of packets that will be sorted.")
 	cmd.Flags().IntVarP(&f.BundleByteThreshold, "byte-threshold", "", defaultBundleByteThreshold,
-		"The maximum number of bytes of packets that will be sorted.")
+		"The maximum size of the sorting pool in bytes.")
 	cmd.Flags().BoolVarP(&f.CorrectOrder, "correct-order", "", defaultCorrectOrder,
 		"When set to true, packets will be reordered by time_first_byte_received.")
 }
