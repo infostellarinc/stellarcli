@@ -73,8 +73,6 @@ func NewOpenStreamCommand() *cobra.Command {
 				IsVerbose:       verboseFlag.IsVerbose,
 
 				CorrectOrder:         correctOrderFlags.CorrectOrder,
-				BundleCountThreshold: correctOrderFlags.BundleCountThreshold,
-				BundleByteThreshold:  correctOrderFlags.BundleByteThreshold,
 				DelayThreshold:       correctOrderFlags.DelayThreshold,
 			}
 

@@ -18,19 +18,18 @@ import (
 	"context"
 	"io"
 	"log"
-	"sort"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"google.golang.org/api/support/bundler"
 	"google.golang.org/grpc"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
+	"github.com/infostellarinc/stellarcli/pkg/util/collection"
 )
 
 const (
@@ -47,10 +46,8 @@ type SatelliteStreamOptions struct {
 	IsDebug         bool
 	IsVerbose       bool
 
-	CorrectOrder         bool
-	BundleCountThreshold int
-	BundleByteThreshold  int
-	DelayThreshold       time.Duration
+	CorrectOrder   bool
+	DelayThreshold time.Duration
 }
 
 type SatelliteStream interface {
@@ -75,10 +72,10 @@ type satelliteStream struct {
 	isVerbose      bool
 	acceptedPlanId []string
 
-	correctOrder         bool
-	bundleCountThreshold int
-	bundleByteThreshold  int
-	delayThreshold       time.Duration
+	correctOrder   bool
+	delayThreshold time.Duration
+	flushTimer     *time.Timer
+	mu             sync.Mutex
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
@@ -94,10 +91,8 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		isVerbose:          o.IsVerbose,
 		acceptedPlanId:     o.AcceptedPlanId,
 
-		correctOrder:         o.CorrectOrder,
-		bundleCountThreshold: o.BundleCountThreshold,
-		bundleByteThreshold:  o.BundleByteThreshold,
-		delayThreshold:       o.DelayThreshold,
+		correctOrder:   o.CorrectOrder,
+		delayThreshold: o.DelayThreshold,
 	}
 
 	err := s.start()
@@ -140,32 +135,39 @@ func (ss *satelliteStream) recvLoop() {
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
 
-	payloadBundler := bundler.NewBundler((*stellarstation.Telemetry)(nil), func(bundle interface{}) {
-		telemetries := bundle.([]*stellarstation.Telemetry)
-		lessFunc := func(i, j int) bool {
-			time1, err := ptypes.Timestamp(telemetries[i].TimeFirstByteReceived)
-			if err != nil {
-				log.Fatal(err)
-			}
-			time2, err := ptypes.Timestamp(telemetries[j].TimeFirstByteReceived)
-			if err != nil {
-				log.Fatal(err)
-			}
+	pq := collection.NewPriorityQueue((*stellarstation.Telemetry)(nil), func(i, j interface{}) bool {
+		telemetry1 := i.(*stellarstation.Telemetry)
+		telemetry2 := j.(*stellarstation.Telemetry)
 
-			return time1.Before(time2)
+		time1, err := ptypes.Timestamp(telemetry1.TimeFirstByteReceived)
+		if err != nil {
+			log.Fatal(err)
 		}
-		if !sort.SliceIsSorted(telemetries, lessFunc) {
-			sort.SliceStable(telemetries, lessFunc)
+		time2, err := ptypes.Timestamp(telemetry2.TimeFirstByteReceived)
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		for _, telemetry := range telemetries {
+		return !time1.After(time2)
+	})
+
+	ss.flushTimer = time.AfterFunc(ss.delayThreshold, func() {
+		ss.mu.Lock()
+		defer ss.mu.Unlock()
+
+		// Flush data in the PriorityQueue half of the incoming data.
+		numFlush := (pq.Len() + 1) / 2
+		if numFlush > 0 {
+			log.Printf("%d data in the queue, flused %d.\n", pq.Len(), numFlush)
+		}
+
+		// Flush half of the data in the priority queue
+		for i := 0; i < numFlush; i++ {
+			telemetry := pq.Pop().(*stellarstation.Telemetry)
 			ss.recvChan <- telemetry.Data
 		}
+		ss.flushTimer.Reset(ss.delayThreshold)
 	})
-	payloadBundler.DelayThreshold = ss.delayThreshold
-	payloadBundler.BundleCountThreshold = ss.bundleCountThreshold
-	payloadBundler.BundleByteThreshold = ss.bundleByteThreshold
-	payloadBundler.BufferedByteLimit = 1e9 // 1G
 
 	for {
 		res, err := ss.stream.Recv()
@@ -216,7 +218,11 @@ func (ss *satelliteStream) recvLoop() {
 				log.Printf("received data: planId: %s, framing type: %s, size: %d bytes\n", planId, telemetry.Framing, len(payload))
 			}
 			if ss.correctOrder {
-				payloadBundler.Add(telemetry, proto.Size(telemetry))
+				go func() {
+					ss.mu.Lock()
+					defer ss.mu.Unlock()
+					pq.Push(telemetry)
+				}()
 			} else {
 				ss.recvChan <- payload
 			}
