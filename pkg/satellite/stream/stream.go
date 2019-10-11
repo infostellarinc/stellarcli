@@ -158,7 +158,7 @@ func (ss *satelliteStream) recvLoop() {
 		// Flush data in the PriorityQueue half of the incoming data.
 		numFlush := (pq.Len() + 1) / 2
 		if numFlush > 0 {
-			log.Printf("%d data in the queue, flused %d.\n", pq.Len(), numFlush)
+			log.Printf("%d data in the queue, flushed %d.\n", pq.Len(), numFlush)
 		}
 
 		// Flush half of the data in the priority queue
