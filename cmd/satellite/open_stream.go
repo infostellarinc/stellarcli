@@ -72,8 +72,8 @@ func NewOpenStreamCommand() *cobra.Command {
 				IsDebug:         debugFlag.IsDebug,
 				IsVerbose:       verboseFlag.IsVerbose,
 
-				CorrectOrder:         correctOrderFlags.CorrectOrder,
-				DelayThreshold:       correctOrderFlags.DelayThreshold,
+				CorrectOrder:   correctOrderFlags.CorrectOrder,
+				DelayThreshold: correctOrderFlags.DelayThreshold,
 			}
 
 			c := make(chan os.Signal)
