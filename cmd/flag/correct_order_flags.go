@@ -23,31 +23,21 @@ import (
 
 var (
 	// Default correct order.
-	defaultCorrectOrder = false
-
-	defaultBundleCountThreshold               = 20
-	defaultBundleByteThreshold  int           = 10e6 // 1M
-	defaultDelayThreshold       time.Duration = 500 * time.Millisecond
+	defaultCorrectOrder                 = false
+	defaultDelayThreshold time.Duration = 500 * time.Millisecond
 )
 
 type CorrectOrderFlags struct {
-	CorrectOrder bool
-
-	BundleCountThreshold int
-	BundleByteThreshold  int
-	DelayThreshold       time.Duration
+	CorrectOrder   bool
+	DelayThreshold time.Duration
 }
 
 // Add flags to the command.
 func (f *CorrectOrderFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVarP(&f.DelayThreshold, "delay-threshold", "", defaultDelayThreshold,
 		"The maximum amount of time that packets remain in the sorting pool.")
-	cmd.Flags().IntVarP(&f.BundleCountThreshold, "count-threshold", "", defaultBundleCountThreshold,
-		"The maximum number of packets in the sorting pool.")
-	cmd.Flags().IntVarP(&f.BundleByteThreshold, "byte-threshold", "", defaultBundleByteThreshold,
-		"The maximum size of the sorting pool in bytes.")
 	cmd.Flags().BoolVarP(&f.CorrectOrder, "correct-order", "", defaultCorrectOrder,
-		"When set to true, packets will be sorted by time_first_byte_received.")
+		"When set to true, packets will be sorted by time_first_byte_received. This feature is alpha quality.")
 }
 
 // Validate flag values.
