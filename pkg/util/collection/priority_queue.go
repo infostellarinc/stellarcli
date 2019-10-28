@@ -25,7 +25,7 @@ type pqInternal struct {
 	items []interface{}
 	less  func(i, j interface{}) bool
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 // A PriorityQueue that returns items ordered by 'less' function.
@@ -34,9 +34,17 @@ type PriorityQueue struct {
 	queue *pqInternal
 }
 
-func (pq *pqInternal) Len() int { return len(pq.items) }
+func (pq *pqInternal) Len() int {
+	pq.mu.RLock()
+	defer pq.mu.RUnlock()
+
+	return len(pq.items)
+}
 
 func (pq *pqInternal) Less(i, j int) bool {
+	pq.mu.RLock()
+	defer pq.mu.RUnlock()
+
 	return pq.less(pq.items[i], pq.items[j])
 }
 
