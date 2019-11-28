@@ -30,17 +30,32 @@ var listPlansTemplate = []printer.TemplateItem{
 	{"ID", "id"},
 	{"SATELLITE_ID", "satelliteId"},
 	{"CHANNEL_SET_NAME", "channelSet.name"},
+	{"STATUS", "status"},
+	{"AOS_TIME", "aos"},
+	{"LOS_TIME", "los"},
+	{"GS_ORG_NAME", "gsInfo.orgName"},
+	{"GS_COUNTRY", "gsInfo.country"},
+	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
+	{"UNIT_PRICE", "unitPrice"},
+}
+
+var listPlansVerboseTemplate = []printer.TemplateItem{
+	{"ID", "id"},
+	{"SATELLITE_ID", "satelliteId"},
+	{"CHANNEL_SET_NAME", "channelSet.name"},
 	{"CHANNEL_SET_ID", "channelSet.id"},
 	{"STATUS", "status"},
 	{"AOS_TIME", "aos"},
 	{"LOS_TIME", "los"},
-	{"GS_LAT", "gsInfo.gsLat"},
-	{"GS_LONG", "gsInfo.gsLong"},
-	{"GS_COUNTRY", "gsInfo.gsCountry"},
+	{"GS_ORG_NAME", "gsInfo.orgName"},
+	{"GS_LAT", "gsInfo.latitude"},
+	{"GS_LONG", "gsInfo.longitude"},
+	{"GS_COUNTRY", "gsInfo.country"},
 	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
 	{"MAX_ELEVATION_TIME", "maxElevationTime"},
 	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
 	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
+	{"UNIT_PRICE", "unitPrice"},
 }
 
 type ListOptions struct {
@@ -48,6 +63,7 @@ type ListOptions struct {
 	ID        string
 	AOSAfter  *time.Time
 	AOSBefore *time.Time
+	IsVerbose    bool
 }
 
 // ListPlans returns a list of plans for a given satellite.
@@ -131,10 +147,12 @@ func ListPlans(o *ListOptions) {
 			"aos":    aos,
 			"los":    los,
 			"gsInfo": map[string]interface{}{
-				"gsLat":     plan.GroundStationLatitude,
-				"gsLong":    plan.GroundStationLongitude,
-				"gsCountry": plan.GroundStationCountryCode,
+				"latitude":  plan.GroundStationLatitude,
+				"longitude": plan.GroundStationLongitude,
+				"country":   plan.GroundStationCountryCode,
+				"orgName":   plan.GroundStationOrganizationName,
 			},
+			"unitPrice":          plan.UnitPrice,
 			"maxElevationDegree": plan.MaxElevationDegrees,
 			"maxElevationTime":   maxElevationTime,
 		}

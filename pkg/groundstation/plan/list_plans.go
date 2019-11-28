@@ -26,22 +26,34 @@ import (
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 
+var listPlansVerboseTemplate = []printer.TemplateItem{
+	{"PLAN_ID", "planId"},
+	{"AOS_TIME", "aos"},
+	{"LOS_TIME", "los"},
+	{"SATELLITE_ORG_NAME", "satelliteInfo.orgName"},
+	{"DL_FREQ_HZ", "downlinkFreq"},
+	{"UL_FREQ_HZ", "uplinkFreq"},
+	{"TLE_LINE__1", "tleLine1"},
+	{"TLE_LINE__2", "tleLine2"},
+	{"UNIT_PRICE", "unitPrice"},
+}
+
+var listPlansTemplate = []printer.TemplateItem{
+	{"PLAN_ID", "planId"},
+	{"AOS_TIME", "aos"},
+	{"LOS_TIME", "los"},
+	{"SATELLITE_ORG_NAME", "satelliteInfo.orgName"},
+	{"DL_FREQ_HZ", "downlinkFreq"},
+	{"UL_FREQ_HZ", "uplinkFreq"},
+	{"UNIT_PRICE", "unitPrice"},
+}
+
 type ListOptions struct {
 	Printer   printer.Printer
 	ID        string
 	AOSAfter  *time.Time
 	AOSBefore *time.Time
-}
-
-// Headers of columns
-var headers = []interface{}{
-	"PLAN_ID",
-	"AOS_TIME",
-	"LOS_TIME",
-	"DOWNLINK_CENTER_FREQUENCY_HZ",
-	"UPLINK_CENTER_FREQUENCY_HZ",
-	"TLE_LINE__1",
-	"TLE_LINE__2",
+	IsVerbose bool
 }
 
 // ListPlans returns a list of plans for a given ground station.
@@ -74,9 +86,15 @@ func ListPlans(o *ListOptions) {
 		log.Fatal(err)
 	}
 
-	defer o.Printer.Flush()
-	o.Printer.Write(headers)
+	targetTemplate := listPlansTemplate
+	if o.IsVerbose {
+		targetTemplate = listPlansVerboseTemplate
+	}
 
+	defer o.Printer.Flush()
+	o.Printer.WriteHeader(targetTemplate)
+
+	var results []map[string]interface{}
 	for _, plan := range result.Plan {
 		aos, err := ptypes.Timestamp(plan.AosTime)
 		if err != nil {
@@ -95,16 +113,20 @@ func ListPlans(o *ListOptions) {
 		if plan.UplinkRadioDevice != nil {
 			uplinkFreq = plan.UplinkRadioDevice.CenterFrequencyHz
 		}
-		record := []interface{}{
-			plan.PlanId,
-			aos,
-			los,
-			downlinkFreq,
-			uplinkFreq,
-			plan.Tle.Line_1,
-			plan.Tle.Line_2,
+		obj := map[string]interface{}{
+			"planId": plan.PlanId,
+			"aos":    aos,
+			"los":    los,
+			"satelliteInfo": map[string]interface{}{
+				"orgName": plan.SatelliteOrganizationName,
+			},
+			"unitPrice":    plan.UnitPrice,
+			"downlinkFreq": downlinkFreq,
+			"uplinkFreq":   uplinkFreq,
+			"tleLine1":     plan.Tle.Line_1,
+			"tleLine2":     plan.Tle.Line_2,
 		}
-
-		o.Printer.Write(record)
+		results = append(results, obj)
 	}
+	o.Printer.WriteWithTemplate(results, targetTemplate)
 }
