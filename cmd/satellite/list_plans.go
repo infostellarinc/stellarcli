@@ -35,7 +35,8 @@ var (
 func NewListPlansCommand() *cobra.Command {
 	passRangeFlags := flag.NewPassRangeFlags()
 	outputFormatFlags := flag.NewOutputFormatFlags()
-	flags := flag.NewFlagSet(passRangeFlags, outputFormatFlags)
+	verboseFlag := flag.NewVerboseFlags()
+	flags := flag.NewFlagSet(passRangeFlags, outputFormatFlags, verboseFlag)
 
 	command := &cobra.Command{
 		Use:   listPlansUse,
@@ -59,6 +60,7 @@ func NewListPlansCommand() *cobra.Command {
 				ID:        args[0],
 				AOSAfter:  &passRangeFlags.AOSAfter,
 				AOSBefore: &passRangeFlags.AOSBefore,
+				IsVerbose: verboseFlag.IsVerbose,
 			}
 
 			plan.ListPlans(o)
