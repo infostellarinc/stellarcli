@@ -63,7 +63,7 @@ type ListOptions struct {
 	ID        string
 	AOSAfter  *time.Time
 	AOSBefore *time.Time
-	IsVerbose    bool
+	IsVerbose bool
 }
 
 // ListPlans returns a list of plans for a given satellite.
