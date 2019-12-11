@@ -204,6 +204,9 @@ func (ss *satelliteStream) recvLoop() {
 			}
 			log.Println("connected to the API stream.")
 		}
+		if ss.isVerbose && ss.streamId != res.StreamId {
+			log.Printf("streamId: %v\n", res.StreamId)
+		}
 		ss.streamId = res.StreamId
 
 		switch res.Response.(type) {
@@ -277,6 +280,10 @@ func (ss *satelliteStream) openStream() error {
 
 	ss.conn = conn
 	ss.stream = stream
+	if ss.isVerbose && ss.streamId != "" {
+		log.Printf("streamId: %v\n", ss.streamId)
+	}
+
 	return nil
 }
 
