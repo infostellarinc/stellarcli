@@ -16,6 +16,7 @@ package apiclient
 
 import (
 	"crypto/tls"
+	"log"
 	"os"
 	"strings"
 
@@ -36,6 +37,7 @@ func Dial() (*grpc.ClientConn, error) {
 	if len(apiUrl) == 0 {
 		apiUrl = "api.stellarstation.com:443"
 	}
+	log.Printf("API endpoint: %s", apiUrl)
 
 	tlsConfig := &tls.Config{}
 	if strings.HasPrefix(apiUrl, "localhost") || strings.HasPrefix(apiUrl, "127.0.0.1") {
