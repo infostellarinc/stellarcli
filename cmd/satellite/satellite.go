@@ -40,6 +40,7 @@ func NewSatelliteCommand() *cobra.Command {
 	command.AddCommand(NewListPlansCommand())
 	command.AddCommand(NewOpenStreamCommand())
 	command.AddCommand(NewReservePassCommand())
+	command.AddCommand(NewSetTLESourceCommand())
 
 	return command
 }
