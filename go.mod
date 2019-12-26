@@ -5,7 +5,7 @@ require (
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/golang/protobuf v1.3.1
-	github.com/infostellarinc/go-stellarstation v0.5.1-0.20191128105708-22af2c9255e1
+	github.com/infostellarinc/go-stellarstation v0.5.1
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.8.0
