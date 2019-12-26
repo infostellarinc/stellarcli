@@ -32,7 +32,7 @@ All commands after that will be authenticated using that key.
 
 ## Developing
 
-The utility requires either Java or Go 1.11beta2. When using Java with Gradle, Go is automatically
+The utility requires either Java or Go 1.13. When using Java with Gradle, Go is automatically
 downloaded and does not need to be installed.
 
 ```bash
