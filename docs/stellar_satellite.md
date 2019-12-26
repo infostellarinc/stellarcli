@@ -22,4 +22,5 @@ Commands for working with satellites
 * [stellar satellite list-plans](stellar_satellite_list-plans.md)	 - Lists plans of a satellite.
 * [stellar satellite open-stream](stellar_satellite_open-stream.md)	 - Opens a proxy to stream packets to and from a satellite.
 * [stellar satellite reserve-pass](stellar_satellite_reserve-pass.md)	 - Reserve a pass for a satellite.
+* [stellar satellite set-tle-source](stellar_satellite_set-tle-source.md)	 - Sets the TLE source for a satellite.
 
