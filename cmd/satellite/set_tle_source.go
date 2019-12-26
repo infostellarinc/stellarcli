@@ -30,7 +30,7 @@ var (
 	setTLESourceLong  = util.Normalize("Sets the TLE source for a satellite. Accepted sources are MANUAL and NORAD.")
 )
 
-// Create add-tle command.
+// Create set-tle-source command.
 func NewSetTLESourceCommand() *cobra.Command {
 	outputFormatFlags := flag.NewOutputFormatFlags()
 	flags := flag.NewFlagSet(outputFormatFlags)
