@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
@@ -40,11 +41,12 @@ func SetTLESource(o *SetTLESourceOptions) {
 
 	client := stellarstation.NewStellarStationServiceClient(conn)
 
+	var sourceOption = strings.ToLower(o.Source)
 	var source stellarstation.SetTleSourceRequest_Source
 
-	if o.Source == "MANUAL" {
+	if sourceOption == "manual" {
 		source = stellarstation.SetTleSourceRequest_MANUAL
-	} else if o.Source == "NORAD" {
+	} else if sourceOption == "norad" {
 		source = stellarstation.SetTleSourceRequest_NORAD
 	} else {
 		log.Fatal("Invalid source provided")
