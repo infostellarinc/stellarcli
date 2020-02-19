@@ -15,8 +15,8 @@
  */
 
 plugins {
-    id 'org.curioswitch.gradle-golang-plugin' version '0.1.0'
     id 'com.github.breadmoirai.github-release' version '2.2.11'
+    id 'org.curioswitch.gradle-golang-plugin' version '0.1.0'
 }
 
 golang {
