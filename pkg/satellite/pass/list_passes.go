@@ -29,6 +29,7 @@ var listPassesVerboseTemplate = []printer.TemplateItem{
 	{"RESERVATION_TOKEN", "reservationToken"},
 	{"AOS_TIME", "aos"},
 	{"LOS_TIME", "los"},
+	{"GS_ID", "gsInfo.id"},
 	{"GS_ORG_NAME", "gsInfo.orgName"},
 	{"GS_LAT", "gsInfo.latitude"},
 	{"GS_LONG", "gsInfo.longitude"},
@@ -131,6 +132,7 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 					"aos":              aos,
 					"los":              los,
 					"gsInfo": map[string]interface{}{
+						"id":        pass.GroundStationId,
 						"latitude":  pass.GroundStationLatitude,
 						"longitude": pass.GroundStationLongitude,
 						"country":   pass.GroundStationCountryCode,
