@@ -1,22 +1,23 @@
-buildscript {
-    repositories {
-        jcenter()
-        gradlePluginPortal()
-        maven {
-            url 'http://dl.bintray.com/curioswitch/curiostack'
-        }
-        mavenLocal()
-    }
-    dependencies {
-        classpath "org.curioswitch.curiostack:gradle-golang-plugin:0.0.18"
-    }
-}
+/*
+ * Copyright 2020 Infostellar, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 plugins {
-    id 'com.github.breadmoirai.github-release' version '2.2.4'
+    id 'org.curioswitch.gradle-golang-plugin' version '0.1.0'
+    id 'com.github.breadmoirai.github-release' version '2.2.11'
 }
-
-apply plugin: 'org.curioswitch.gradle-golang-plugin'
 
 golang {
     executableName = 'stellar'
@@ -31,7 +32,7 @@ afterEvaluate {
         }
     }
 
-    golang.goOses.get().each {goOs ->
+    golang.goOses.get().each { goOs ->
         def camelCase = goOs.capitalize() + 'Amd64'
         task "archive${camelCase}"(type: Zip) {
             dependsOn tasks."goBuild${camelCase}"
