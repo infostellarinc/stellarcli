@@ -30,6 +30,7 @@ var listPlansVerboseTemplate = []printer.TemplateItem{
 	{"PLAN_ID", "planId"},
 	{"AOS_TIME", "aos"},
 	{"LOS_TIME", "los"},
+	{"SATELLITE_ID", "satelliteInfo.id"},
 	{"SATELLITE_ORG_NAME", "satelliteInfo.orgName"},
 	{"DL_FREQ_HZ", "downlinkFreq"},
 	{"UL_FREQ_HZ", "uplinkFreq"},
@@ -118,6 +119,7 @@ func ListPlans(o *ListOptions) {
 			"aos":    aos,
 			"los":    los,
 			"satelliteInfo": map[string]interface{}{
+				"id":      plan.SatelliteId,
 				"orgName": plan.SatelliteOrganizationName,
 			},
 			"unitPrice":    plan.UnitPrice,
