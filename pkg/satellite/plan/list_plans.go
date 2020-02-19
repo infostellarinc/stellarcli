@@ -26,6 +26,26 @@ import (
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 
+var listPlansVerboseTemplate = []printer.TemplateItem{
+	{"ID", "id"},
+	{"SATELLITE_ID", "satelliteId"},
+	{"CHANNEL_SET_NAME", "channelSet.name"},
+	{"CHANNEL_SET_ID", "channelSet.id"},
+	{"STATUS", "status"},
+	{"AOS_TIME", "aos"},
+	{"LOS_TIME", "los"},
+	{"GS_ID", "gsInfo.id"},
+	{"GS_ORG_NAME", "gsInfo.orgName"},
+	{"GS_LAT", "gsInfo.latitude"},
+	{"GS_LONG", "gsInfo.longitude"},
+	{"GS_COUNTRY", "gsInfo.country"},
+	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
+	{"MAX_ELEVATION_TIME", "maxElevationTime"},
+	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
+	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
+	{"UNIT_PRICE", "unitPrice"},
+}
+
 var listPlansTemplate = []printer.TemplateItem{
 	{"ID", "id"},
 	{"SATELLITE_ID", "satelliteId"},
@@ -36,25 +56,6 @@ var listPlansTemplate = []printer.TemplateItem{
 	{"GS_ORG_NAME", "gsInfo.orgName"},
 	{"GS_COUNTRY", "gsInfo.country"},
 	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
-	{"UNIT_PRICE", "unitPrice"},
-}
-
-var listPlansVerboseTemplate = []printer.TemplateItem{
-	{"ID", "id"},
-	{"SATELLITE_ID", "satelliteId"},
-	{"CHANNEL_SET_NAME", "channelSet.name"},
-	{"CHANNEL_SET_ID", "channelSet.id"},
-	{"STATUS", "status"},
-	{"AOS_TIME", "aos"},
-	{"LOS_TIME", "los"},
-	{"GS_ORG_NAME", "gsInfo.orgName"},
-	{"GS_LAT", "gsInfo.latitude"},
-	{"GS_LONG", "gsInfo.longitude"},
-	{"GS_COUNTRY", "gsInfo.country"},
-	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
-	{"MAX_ELEVATION_TIME", "maxElevationTime"},
-	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
-	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
 	{"UNIT_PRICE", "unitPrice"},
 }
 
@@ -97,6 +98,9 @@ func ListPlans(o *ListOptions) {
 	}
 
 	targetTemplate := listPlansTemplate
+	if o.IsVerbose {
+		targetTemplate = listPlansVerboseTemplate
+	}
 
 	defer o.Printer.Flush()
 	o.Printer.WriteHeader(targetTemplate)
@@ -147,6 +151,7 @@ func ListPlans(o *ListOptions) {
 			"aos":    aos,
 			"los":    los,
 			"gsInfo": map[string]interface{}{
+				"id":        plan.GroundStationId,
 				"latitude":  plan.GroundStationLatitude,
 				"longitude": plan.GroundStationLongitude,
 				"country":   plan.GroundStationCountryCode,
