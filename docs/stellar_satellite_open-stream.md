@@ -15,7 +15,7 @@ stellar satellite open-stream [satellite-id] [flags]
 ### Options
 
 ```
-      --accepted-framing strings   Framing type to receive. One of: IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM|AX25|IQ
+      --accepted-framing strings   Framing type to receive. One of: BITSTREAM|AX25|IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL
       --accepted-plan-id strings   Plan ID(s) to accept data from.
       --correct-order              When set to true, packets will be sorted by time_first_byte_received. This feature is alpha quality.
       --debug                      Output debug information. (default false)
