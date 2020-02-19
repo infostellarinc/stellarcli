@@ -45,6 +45,8 @@ github.com/infostellarinc/go-stellarstation v0.5.1-0.20191128105708-22af2c9255e1
 github.com/infostellarinc/go-stellarstation v0.5.1-0.20191128105708-22af2c9255e1/go.mod h1:ZUgU88DoZXjmZ2XrIyYfEWlnCV3sYWMkcsRUMvcwNUg=
 github.com/infostellarinc/go-stellarstation v0.5.1 h1:6HuNhKnago5hewnGoUDTv2ERJO1WeFNkZjbEx6jgKcE=
 github.com/infostellarinc/go-stellarstation v0.5.1/go.mod h1:ZUgU88DoZXjmZ2XrIyYfEWlnCV3sYWMkcsRUMvcwNUg=
+github.com/infostellarinc/go-stellarstation v0.5.2-0.20200206091747-c2953e8ea53c h1:gwDlHPWZO0aWDz9YOS6Z75fPjShv+/WzoRYP5ltTkAE=
+github.com/infostellarinc/go-stellarstation v0.5.2-0.20200206091747-c2953e8ea53c/go.mod h1:Pmo6ejsQ9Squvsb6Kuv4pgDOHvJhacOU4TEo1XAlp3A=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
