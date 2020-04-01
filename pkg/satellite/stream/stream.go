@@ -39,6 +39,10 @@ const (
 
 const MaxElapsedTime = 60 * time.Second
 
+var timerStart = time.Now()
+var totalBytesReceived = 0
+var totalMessagesReceived = 0
+
 type SatelliteStreamOptions struct {
 	AcceptedFraming []stellarstation.Framing
 	AcceptedPlanId  []string
@@ -219,7 +223,13 @@ func (ss *satelliteStream) recvLoop() {
 			telemetry := res.GetReceiveTelemetryResponse().Telemetry
 			payload := telemetry.Data
 			if ss.isDebug {
-				log.Printf("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+				if totalBytesReceived == 0 {
+					timerStart = time.Now()
+				}
+				totalMessagesReceived++
+				elapsed := time.Since(timerStart).Seconds()
+				totalBytesReceived += len(payload)
+				log.Printf("received data: streamId: %v, planId: %s, framing type: %s, msgs: %d, bytes: %.1f MB, rate: %0.1f Mbps\n", ss.streamId, planId, telemetry.Framing, totalMessagesReceived, float32(totalBytesReceived)/1024/1024, float64(totalBytesReceived)/elapsed/1024/1024*8)
 			}
 			if ss.correctOrder {
 				go func() {
@@ -239,7 +249,7 @@ func (ss *satelliteStream) recvLoop() {
 			if ss.isVerbose {
 				if gsState := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gsState != nil {
 					if a := gsState.Antenna; a != nil {
-						log.Printf("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
+						//log.Printf("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
 					}
 
 					if rcv := gsState.Receiver; rcv != nil {
