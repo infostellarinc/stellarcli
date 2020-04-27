@@ -16,10 +16,14 @@ package stream
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
+	"os"
+	"os/signal"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -39,9 +43,8 @@ const (
 
 const MaxElapsedTime = 60 * time.Second
 
-var timerStart = time.Now()
-var totalBytesReceived = 0
-var totalMessagesReceived = 0
+var metrics MetricsCollector
+var logger ThrottledLogger
 
 type SatelliteStreamOptions struct {
 	AcceptedFraming []stellarstation.Framing
@@ -50,6 +53,7 @@ type SatelliteStreamOptions struct {
 	StreamId        string
 	IsDebug         bool
 	IsVerbose       bool
+	ShowStats       bool
 
 	CorrectOrder   bool
 	DelayThreshold time.Duration
@@ -75,6 +79,7 @@ type satelliteStream struct {
 	state          uint32
 	isDebug        bool
 	isVerbose      bool
+	showStats      bool
 	acceptedPlanId []string
 
 	correctOrder   bool
@@ -94,6 +99,7 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		recvLoopClosedChan: make(chan struct{}),
 		isDebug:            o.IsDebug,
 		isVerbose:          o.IsVerbose,
+		showStats:          o.ShowStats,
 		acceptedPlanId:     o.AcceptedPlanId,
 
 		correctOrder:   o.CorrectOrder,
@@ -116,9 +122,7 @@ func (ss *satelliteStream) Send(payload []byte) error {
 		},
 	}
 
-	if ss.isVerbose {
-		log.Printf("sent data: size: %d bytes\n", len(payload))
-	}
+	logger.verbose("sent data: size: %d bytes\n", len(payload))
 
 	return ss.stream.Send(&req)
 }
@@ -208,8 +212,8 @@ func (ss *satelliteStream) recvLoop() {
 			}
 			log.Println("connected to the API stream.")
 		}
-		if ss.isVerbose && ss.streamId != res.StreamId {
-			log.Printf("streamId: %v\n", res.StreamId)
+		if ss.streamId != res.StreamId {
+			logger.verbose("streamId: %v\n", res.StreamId)
 		}
 		ss.streamId = res.StreamId
 
@@ -222,14 +226,10 @@ func (ss *satelliteStream) recvLoop() {
 
 			telemetry := res.GetReceiveTelemetryResponse().Telemetry
 			payload := telemetry.Data
-			if ss.isDebug {
-				if totalBytesReceived == 0 {
-					timerStart = time.Now()
-				}
-				totalMessagesReceived++
-				elapsed := time.Since(timerStart).Seconds()
-				totalBytesReceived += len(payload)
-				log.Printf("received data: streamId: %v, planId: %s, framing type: %s, msgs: %d, bytes: %.1f MB, rate: %0.1f Mbps\n", ss.streamId, planId, telemetry.Framing, totalMessagesReceived, float32(totalBytesReceived)/1024/1024, float64(totalBytesReceived)/elapsed/1024/1024*8)
+			logger.debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+			if ss.showStats {
+				metrics.collectMessage(len(payload))
+				metrics.logStats()
 			}
 			if ss.correctOrder {
 				go func() {
@@ -249,11 +249,11 @@ func (ss *satelliteStream) recvLoop() {
 			if ss.isVerbose {
 				if gsState := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gsState != nil {
 					if a := gsState.Antenna; a != nil {
-						//log.Printf("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
+						logger.verbose("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
 					}
 
 					if rcv := gsState.Receiver; rcv != nil {
-						log.Printf("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
+						logger.verbose("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
 					}
 				}
 
@@ -290,14 +290,43 @@ func (ss *satelliteStream) openStream() error {
 
 	ss.conn = conn
 	ss.stream = stream
-	if ss.isVerbose && ss.streamId != "" {
-		log.Printf("streamId: %v\n", ss.streamId)
+	if ss.streamId != "" {
+		logger.verbose("streamId: %v\n", ss.streamId)
 	}
 
 	return nil
 }
 
+// register hook to print metric stats on interrupt (eg: ctrl-c)
+func registerShutdownHook(ss *satelliteStream) {
+	sigs := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		_ = <-sigs
+		fmt.Println()
+		if ss.showStats {
+			fmt.Println()
+			metrics.logStats()
+			fmt.Println()
+		}
+		done <- true
+	}()
+}
+
 func (ss *satelliteStream) start() error {
+	// create logger that is capable of throttled logging
+	logger = *NewThrottledLogger(500, ss.isVerbose, ss.isDebug)
+
+	// metric collector for data rate, total received size, etc
+	if ss.isVerbose || ss.isDebug {
+		metrics = *NewMetricsCollector(logger.infoThrottled)
+	} else {
+		metrics = *NewMetricsCollector(logger.lastLine)
+	}
+
+	registerShutdownHook(ss)
+
 	err := ss.openStream()
 	if err != nil {
 		return err
