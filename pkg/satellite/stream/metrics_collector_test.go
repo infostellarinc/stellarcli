@@ -25,7 +25,7 @@ func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 		return
 	}
 	if len(message) == 0 {
-		message = fmt.Sprintf("%v != %v", a, b)
+		message = fmt.Sprintf("'%v' != '%v'", a, b)
 	}
 	t.Fatal(message)
 }
@@ -50,4 +50,18 @@ func TestReset(t *testing.T) {
 	metrics.logStats()
 	assertEqual(t, metrics.totalMessagesReceived, int64(1), "")
 	assertEqual(t, metrics.totalBytesReceived, int64(50), "")
+}
+
+func TestDelay(t *testing.T) {
+	for i := int64(6); i < 1e15; i *= 10 {
+		t.Log(humanReadableNanoSeconds(i))
+	}
+	assertEqual(t, humanReadableNanoSeconds(1), "     1 ns", "")
+	assertEqual(t, humanReadableNanoSeconds(100), "   100 ns", "")
+	assertEqual(t, humanReadableNanoSeconds(1e3), "  1.00 µs", "")
+	assertEqual(t, humanReadableNanoSeconds(1e6), "  1.00 ms", "")
+	assertEqual(t, humanReadableNanoSeconds(6e9), "  6.00 s", "")
+	assertEqual(t, humanReadableNanoSeconds(6e11), " 10.00 m", "")
+	assertEqual(t, humanReadableNanoSeconds(6e13), " 16.67 h", "")
+	assertEqual(t, humanReadableNanoSeconds(6e15), "1666.67 h", "")
 }

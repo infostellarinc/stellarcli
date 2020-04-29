@@ -17,6 +17,8 @@ package stream
 import (
 	"fmt"
 	"time"
+
+	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 )
 
 type MetricsCollector struct {
@@ -28,11 +30,13 @@ type MetricsCollector struct {
 	azimuth               float64
 	elevation             float64
 	frequency             float64
+	delayNanos            int64
 	logger                func(format string, v ...interface{})
 }
 
 // run with "go test -v" in this folder to see output
 func NewMetricsCollector(logger func(format string, v ...interface{})) *MetricsCollector {
+	logger("using local time to calculate telemetry delay")
 	return &MetricsCollector{
 		logger: logger,
 	}
@@ -56,6 +60,12 @@ func (metrics *MetricsCollector) reset() {
 	metrics.azimuth = 0
 	metrics.elevation = 0
 	metrics.frequency = 0
+	metrics.delayNanos = 0
+}
+
+func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Telemetry) {
+	metrics.delayNanos += time.Now().UTC().UnixNano() - ((telemetry.TimeLastByteReceived.Seconds * 1e9) + int64(telemetry.TimeLastByteReceived.Nanos))
+	metrics.collectMessage(len(telemetry.Data))
 }
 
 // record 1 message received with size=messageSizeBytes
@@ -80,13 +90,15 @@ func (metrics *MetricsCollector) collectReceiver(frequency float64) {
 // report collected statistics
 func (metrics *MetricsCollector) logStats() {
 	rate := int64(0)
-	if metrics.totalMessagesReceived > 1 {
+	delayNanos := "n/a"
+	if metrics.totalMessagesReceived > 0 {
 		rate = int64(float64(metrics.totalBytesReceived) / metrics.elapsed * 8.00)
+		delayNanos = humanReadableNanoSeconds(metrics.delayNanos / metrics.totalMessagesReceived)
 	}
 	rateStr := humanReadableCountSI(rate)
 	size := humanReadableBytes(metrics.totalBytesReceived)
-	metrics.logger("[STATS] plan_id: %s, azm: %6.2f, ele: %6.2f, freq: %6.1f MHz [DATA] %5d msgs, bytes: %s, rate: %sbps",
-		metrics.planId, metrics.azimuth, metrics.elevation, metrics.frequency, metrics.totalMessagesReceived, size, rateStr)
+	metrics.logger("[STATS] plan_id: %s, azm: %6.2f, ele: %6.2f, freq: %6.1f MHz [DATA] %5d msgs, bytes: %s, rate: %sbps, delay: %s",
+		metrics.planId, metrics.azimuth, metrics.elevation, metrics.frequency, metrics.totalMessagesReceived, size, rateStr, delayNanos)
 }
 
 // converts number (typically bytes or bits) to human readable SI string
@@ -120,4 +132,31 @@ func humanReadableBytes(bytes int64) string {
 		idx++
 	}
 	return fmt.Sprintf("%6.1f %ciB", float64(bytes)/1000.0, ci[idx])
+}
+
+func humanReadableNanoSeconds(delay int64) string {
+	var nanos = float32(delay)
+	if -1000 < nanos && nanos < 1000 {
+		return fmt.Sprintf(" %5.0f ns", nanos)
+	}
+	ci := []string{"µs", "ms", "s", "m", "h"}
+	idx := 0
+	nanos /= 1000 // µs
+	if nanos <= -1000 || nanos >= 1000 {
+		nanos /= 1000 // ms
+		idx++
+		if nanos <= -1000 || nanos >= 1000 {
+			nanos /= 1000 // s
+			idx++
+			if nanos <= -60 || nanos >= 60 {
+				nanos /= 60 // m
+				idx++
+				if nanos <= -60 || nanos >= 60 {
+					nanos /= 60 // h
+					idx++
+				}
+			}
+		}
+	}
+	return fmt.Sprintf("%6.2f %s", nanos, ci[idx])
 }

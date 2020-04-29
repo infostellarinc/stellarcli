@@ -231,7 +231,7 @@ func (ss *satelliteStream) recvLoop() {
 			payload := telemetry.Data
 			logger.debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
 			if ss.showStats {
-				metrics.collectMessage(len(payload))
+				metrics.collectTelemetry(telemetry)
 				metrics.logStats()
 			}
 			if ss.correctOrder {
