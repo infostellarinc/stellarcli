@@ -56,12 +56,12 @@ func TestDelay(t *testing.T) {
 	for i := int64(6); i < 1e15; i *= 10 {
 		t.Log(humanReadableNanoSeconds(i))
 	}
-	assertEqual(t, humanReadableNanoSeconds(1), "     1 ns", "")
-	assertEqual(t, humanReadableNanoSeconds(100), "   100 ns", "")
-	assertEqual(t, humanReadableNanoSeconds(1e3), "  1.00 µs", "")
-	assertEqual(t, humanReadableNanoSeconds(1e6), "  1.00 ms", "")
-	assertEqual(t, humanReadableNanoSeconds(6e9), "  6.00 s", "")
-	assertEqual(t, humanReadableNanoSeconds(6e11), " 10.00 m", "")
-	assertEqual(t, humanReadableNanoSeconds(6e13), " 16.67 h", "")
-	assertEqual(t, humanReadableNanoSeconds(6e15), "1666.67 h", "")
+	assertEqual(t, humanReadableNanoSeconds(1), "    1 ns", "")
+	assertEqual(t, humanReadableNanoSeconds(100), "  100 ns", "")
+	assertEqual(t, humanReadableNanoSeconds(1e3), "  1.0 µs", "")
+	assertEqual(t, humanReadableNanoSeconds(1e6), "  1.0 ms", "")
+	assertEqual(t, humanReadableNanoSeconds(6e9), "  6.0 s ", "")
+	assertEqual(t, humanReadableNanoSeconds(6e11), " 10.0 m ", "")
+	assertEqual(t, humanReadableNanoSeconds(6e13), " 16.7 h ", "")
+	assertEqual(t, humanReadableNanoSeconds(6e15), "1666.7 h ", "")
 }

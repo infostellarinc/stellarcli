@@ -18,8 +18,18 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 )
+
+const InstantMinSamples = 5
+const InstantSampleSeconds = 5
+
+type telemetryWithTimestamp struct {
+	ReceivedTime         time.Time
+	DataBytes            int
+	TimeLastByteReceived *timestamp.Timestamp
+}
 
 type MetricsCollector struct {
 	planId                string
@@ -31,17 +41,19 @@ type MetricsCollector struct {
 	elevation             float64
 	frequency             float64
 	delayNanos            int64
+	messageBuffer         []telemetryWithTimestamp
 	logger                func(format string, v ...interface{})
 }
 
 // run with "go test -v" in this folder to see output
 func NewMetricsCollector(logger func(format string, v ...interface{})) *MetricsCollector {
-	logger("using local time to calculate telemetry delay")
+	logger("[STATS] using local time to calculate telemetry delay\n")
 	return &MetricsCollector{
 		logger: logger,
 	}
 }
 
+// planId is used to identify when to reset the statistics; upon reset, stats is printed to output
 func (metrics *MetricsCollector) setPlanId(planId string) {
 	if metrics.planId != planId {
 		if metrics.totalMessagesReceived > 0 {
@@ -61,14 +73,29 @@ func (metrics *MetricsCollector) reset() {
 	metrics.elevation = 0
 	metrics.frequency = 0
 	metrics.delayNanos = 0
+	metrics.messageBuffer = make([]telemetryWithTimestamp, 0)
 }
 
+// collects metrics for telemetry data message
 func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Telemetry) {
 	metrics.delayNanos += time.Now().UTC().UnixNano() - ((telemetry.TimeLastByteReceived.Seconds * 1e9) + int64(telemetry.TimeLastByteReceived.Nanos))
 	metrics.collectMessage(len(telemetry.Data))
+
+	// save details for instantaneous rates
+	msg := telemetryWithTimestamp{
+		ReceivedTime:         time.Now(),
+		DataBytes:            len(telemetry.Data),
+		TimeLastByteReceived: telemetry.TimeLastByteReceived,
+	}
+	metrics.messageBuffer = append(metrics.messageBuffer, msg)
+	// always keep 5 seconds worth of dta, but no less than 5 samples
+	for len(metrics.messageBuffer) > InstantMinSamples && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
+		metrics.messageBuffer = metrics.messageBuffer[1:]
+	}
 }
 
-// record 1 message received with size=messageSizeBytes
+// record telemetry data message received with size=messageSizeBytes
+// deprecated, kept for unit-tests
 func (metrics *MetricsCollector) collectMessage(messageSizeBytes int) {
 	if metrics.totalBytesReceived == 0 {
 		metrics.timerStart = time.Now()
@@ -89,16 +116,60 @@ func (metrics *MetricsCollector) collectReceiver(frequency float64) {
 
 // report collected statistics
 func (metrics *MetricsCollector) logStats() {
-	rate := int64(0)
-	delayNanos := "n/a"
-	if metrics.totalMessagesReceived > 0 {
-		rate = int64(float64(metrics.totalBytesReceived) / metrics.elapsed * 8.00)
-		delayNanos = humanReadableNanoSeconds(metrics.delayNanos / metrics.totalMessagesReceived)
-	}
-	rateStr := humanReadableCountSI(rate)
+	avgDelayNanos := humanReadableNanoSeconds(metrics.avgDelay())
+	iDelayNanos := humanReadableNanoSeconds(metrics.instantDelay())
+	rateStr := humanReadableCountSI(metrics.avgRate())
+	iRateStr := humanReadableCountSI(metrics.instantRate())
 	size := humanReadableBytes(metrics.totalBytesReceived)
-	metrics.logger("[STATS] plan_id: %s, azm: %6.2f, ele: %6.2f, freq: %6.1f MHz [DATA] %5d msgs, bytes: %s, rate: %sbps, delay: %s",
-		metrics.planId, metrics.azimuth, metrics.elevation, metrics.frequency, metrics.totalMessagesReceived, size, rateStr, delayNanos)
+	metrics.logger("[STATS] %s, plan_id: %s, azm: %5.2f, ele: %5.1f, freq: %5.1f MHz [DATA] %5d msgs, bytes: %s, rate: %sbps (avg %sbps), delay: %s (avg %s)",
+		time.Now().Format("20060102 15:04:05"), metrics.planId, metrics.azimuth, metrics.elevation, metrics.frequency, metrics.totalMessagesReceived, size, iRateStr, rateStr, iDelayNanos, avgDelayNanos)
+}
+
+// return avg rate for entire plan
+func (metrics *MetricsCollector) avgDelay() int64 {
+	if metrics.totalMessagesReceived > 0 {
+		return metrics.delayNanos / metrics.totalMessagesReceived
+	}
+	return 0
+}
+
+// returns the instantaneous data delay
+func (metrics *MetricsCollector) instantDelay() int64 {
+	if len(metrics.messageBuffer) < 2 {
+		return 0
+	}
+	delayNanos := int64(0)
+	for _, msg := range metrics.messageBuffer {
+		delayNanos += msg.ReceivedTime.UTC().UnixNano() - ((msg.TimeLastByteReceived.Seconds * 1e9) + int64(msg.TimeLastByteReceived.Nanos))
+	}
+	return delayNanos / int64(len(metrics.messageBuffer))
+}
+
+// return avg rate for entire plan
+func (metrics *MetricsCollector) avgRate() int64 {
+	if metrics.totalMessagesReceived > 0 {
+		return int64(float64(metrics.totalBytesReceived) / metrics.elapsed * 8.00)
+	}
+	return 0
+}
+
+// returns the instantaneous data rate
+func (metrics *MetricsCollector) instantRate() int64 {
+	if len(metrics.messageBuffer) < 3 {
+		return 0
+	}
+	bytes := int64(0)
+	for i, msg := range metrics.messageBuffer {
+		if i > 0 {
+			// we discard the first message size, but use its ReceivedTime as the "start time" for rate calculations
+			bytes += int64(msg.DataBytes)
+		}
+	}
+	duration := (metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano() - metrics.messageBuffer[0].ReceivedTime.UnixNano()) / 1e9
+	if duration == 0 {
+		return 0
+	}
+	return int64(float64(bytes) / float64(duration) * 8.00)
 }
 
 // converts number (typically bytes or bits) to human readable SI string
@@ -107,7 +178,7 @@ func (metrics *MetricsCollector) logStats() {
 // ported from https://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java
 func humanReadableCountSI(bytes int64) string {
 	if -1000 < bytes && bytes < 1000 {
-		return fmt.Sprintf(" %6d ", bytes)
+		return fmt.Sprintf(" %5d ", bytes)
 	}
 	ci := "kMGTPE"
 	idx := 0
@@ -115,7 +186,7 @@ func humanReadableCountSI(bytes int64) string {
 		bytes /= 1000
 		idx++
 	}
-	return fmt.Sprintf("%6.1f %c", float64(bytes)/1000.0, ci[idx])
+	return fmt.Sprintf("%5.1f %c", float64(bytes)/1000.0, ci[idx])
 }
 
 // converts typically bytes to human readable string (KiB, MiB, etc)
@@ -123,7 +194,7 @@ func humanReadableCountSI(bytes int64) string {
 // ported from https://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java
 func humanReadableBytes(bytes int64) string {
 	if -1024 < bytes && bytes < 1024 {
-		return fmt.Sprintf("  %6d B", bytes)
+		return fmt.Sprintf("  %5d B", bytes)
 	}
 	ci := "KMGTPE"
 	idx := 0
@@ -131,15 +202,16 @@ func humanReadableBytes(bytes int64) string {
 		bytes /= 1024
 		idx++
 	}
-	return fmt.Sprintf("%6.1f %ciB", float64(bytes)/1000.0, ci[idx])
+	return fmt.Sprintf("%5.1f %ciB", float64(bytes)/1000.0, ci[idx])
 }
 
+// converts nanoseconds to human readable string (ns, µs, ms, s, m, h)
 func humanReadableNanoSeconds(delay int64) string {
 	var nanos = float32(delay)
 	if -1000 < nanos && nanos < 1000 {
-		return fmt.Sprintf(" %5.0f ns", nanos)
+		return fmt.Sprintf(" %4.0f ns", nanos)
 	}
-	ci := []string{"µs", "ms", "s", "m", "h"}
+	ci := []string{"µs", "ms", "s ", "m ", "h "}
 	idx := 0
 	nanos /= 1000 // µs
 	if nanos <= -1000 || nanos >= 1000 {
@@ -158,5 +230,5 @@ func humanReadableNanoSeconds(delay int64) string {
 			}
 		}
 	}
-	return fmt.Sprintf("%6.2f %s", nanos, ci[idx])
+	return fmt.Sprintf("%5.1f %s", nanos, ci[idx])
 }
