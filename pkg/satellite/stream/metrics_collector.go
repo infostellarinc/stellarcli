@@ -20,20 +20,42 @@ import (
 )
 
 type MetricsCollector struct {
+	planId                string
 	timerStart            time.Time
 	elapsed               float64
 	totalBytesReceived    int64
 	totalMessagesReceived int64
+	azimuth               float64
+	elevation             float64
+	frequency             float64
 	logger                func(format string, v ...interface{})
 }
 
+// run with "go test -v" in this folder to see output
 func NewMetricsCollector(logger func(format string, v ...interface{})) *MetricsCollector {
 	return &MetricsCollector{
-		timerStart:            time.Now(),
-		totalBytesReceived:    0,
-		totalMessagesReceived: 0,
-		logger:                logger,
+		logger: logger,
 	}
+}
+
+func (metrics *MetricsCollector) setPlanId(planId string) {
+	if metrics.planId != planId {
+		if metrics.totalMessagesReceived > 0 {
+			metrics.logStats()
+			metrics.logger("\n", metrics.planId)
+		}
+		metrics.planId = planId
+		metrics.reset()
+	}
+}
+
+func (metrics *MetricsCollector) reset() {
+	metrics.timerStart = time.Now()
+	metrics.totalBytesReceived = 0
+	metrics.totalMessagesReceived = 0
+	metrics.azimuth = 0
+	metrics.elevation = 0
+	metrics.frequency = 0
 }
 
 // record 1 message received with size=messageSizeBytes
@@ -46,13 +68,25 @@ func (metrics *MetricsCollector) collectMessage(messageSizeBytes int) {
 	metrics.totalBytesReceived += int64(messageSizeBytes)
 }
 
+func (metrics *MetricsCollector) collectAntenna(azimuth, elevation float64) {
+	metrics.azimuth = azimuth
+	metrics.elevation = elevation
+}
+
+func (metrics *MetricsCollector) collectReceiver(frequency float64) {
+	metrics.frequency = frequency
+}
+
 // report collected statistics
 func (metrics *MetricsCollector) logStats() {
-	if metrics.totalMessagesReceived > 0 {
-		rate := humanReadableCountSI(int64(float64(metrics.totalBytesReceived) / metrics.elapsed * 8.00))
-		size := humanReadableBytes(metrics.totalBytesReceived)
-		metrics.logger("[STATS] total: %6d msgs, bytes: %s, rate: %sbps", metrics.totalMessagesReceived, size, rate)
+	rate := int64(0)
+	if metrics.totalMessagesReceived > 1 {
+		rate = int64(float64(metrics.totalBytesReceived) / metrics.elapsed * 8.00)
 	}
+	rateStr := humanReadableCountSI(rate)
+	size := humanReadableBytes(metrics.totalBytesReceived)
+	metrics.logger("[STATS] plan_id: %s, azm: %6.2f, ele: %6.2f, freq: %6.1f MHz [DATA] %5d msgs, bytes: %s, rate: %sbps",
+		metrics.planId, metrics.azimuth, metrics.elevation, metrics.frequency, metrics.totalMessagesReceived, size, rateStr)
 }
 
 // converts number (typically bytes or bits) to human readable SI string
@@ -61,7 +95,7 @@ func (metrics *MetricsCollector) logStats() {
 // ported from https://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java
 func humanReadableCountSI(bytes int64) string {
 	if -1000 < bytes && bytes < 1000 {
-		return fmt.Sprintf("%6d ", bytes)
+		return fmt.Sprintf(" %6d ", bytes)
 	}
 	ci := "kMGTPE"
 	idx := 0
@@ -77,7 +111,7 @@ func humanReadableCountSI(bytes int64) string {
 // ported from https://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java
 func humanReadableBytes(bytes int64) string {
 	if -1024 < bytes && bytes < 1024 {
-		return fmt.Sprintf("%6d ", bytes)
+		return fmt.Sprintf("  %6d B", bytes)
 	}
 	ci := "KMGTPE"
 	idx := 0

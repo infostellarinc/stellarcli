@@ -31,6 +31,9 @@ type ThrottledLogger struct {
 	isDebug             bool
 }
 
+var progressChars = [4]string{"◜", "◝", "◞", "◟"}
+var progressCharIdx = 0
+
 func NewThrottledLogger(emitRateMillis int, isVerbose, isDebug bool) *ThrottledLogger {
 	return &ThrottledLogger{
 		lastLoggedTimestamp: time.Now(),
@@ -86,7 +89,9 @@ func throttleCheck() bool {
 
 // overwrites last line of stdout without creating a new line
 func (logger *ThrottledLogger) lastLine(format string, v ...interface{}) {
-	fmt.Printf("\r"+format+"     ", v...)
+	progressCharIdx = (progressCharIdx + 1) % len(progressChars)
+	fmt.Printf("  %s ", progressChars[progressCharIdx])
+	fmt.Printf("\r"+format+" ", v...)
 }
 
 // overwrites last line of stdout without creating a new line, throttled
