@@ -32,17 +32,22 @@ type telemetryWithTimestamp struct {
 }
 
 type MetricsCollector struct {
-	planId                string
-	timerStart            time.Time
-	elapsed               float64
-	totalBytesReceived    int64
-	totalMessagesReceived int64
-	azimuth               float64
-	elevation             float64
-	frequency             float64
-	delayNanos            int64
-	messageBuffer         []telemetryWithTimestamp
-	logger                func(format string, v ...interface{})
+	planId                        string
+	streamId                      string
+	timerStart                    time.Time
+	elapsed                       float64
+	totalBytesReceived            int64
+	totalMessagesReceived         int64
+	azimuth                       float64
+	elevation                     float64
+	frequency                     float64
+	delayNanos                    int64
+	messageBuffer                 []telemetryWithTimestamp
+	starpassTimeFirstByteReceived *timestamp.Timestamp
+	starpassTimeLastByteReceived  *timestamp.Timestamp
+	localTimeFirstByteReceived    *timestamp.Timestamp
+	localTimeLastByteReceived     *timestamp.Timestamp
+	logger                        func(format string, v ...interface{})
 }
 
 // run with "go test -v" in this folder to see output
@@ -56,13 +61,14 @@ func NewMetricsCollector(logger func(format string, v ...interface{})) *MetricsC
 // planId is used to identify when to reset the statistics; upon reset, stats is printed to output
 func (metrics *MetricsCollector) setPlanId(planId string) {
 	if metrics.planId != planId {
-		if metrics.totalMessagesReceived > 0 {
-			metrics.logStats()
-			metrics.logger("\n", metrics.planId)
-		}
+		metrics.logReport()
 		metrics.planId = planId
 		metrics.reset()
 	}
+}
+
+func (metrics *MetricsCollector) setStreamId(streamId string) {
+	metrics.streamId = streamId
 }
 
 func (metrics *MetricsCollector) reset() {
@@ -74,12 +80,24 @@ func (metrics *MetricsCollector) reset() {
 	metrics.frequency = 0
 	metrics.delayNanos = 0
 	metrics.messageBuffer = make([]telemetryWithTimestamp, 0)
+	metrics.starpassTimeFirstByteReceived = nil
+	metrics.starpassTimeLastByteReceived = nil
+	metrics.localTimeFirstByteReceived = nil
+	metrics.localTimeLastByteReceived = nil
 }
 
 // collects metrics for telemetry data message
 func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Telemetry) {
 	metrics.delayNanos += time.Now().UTC().UnixNano() - ((telemetry.TimeLastByteReceived.Seconds * 1e9) + int64(telemetry.TimeLastByteReceived.Nanos))
 	metrics.collectMessage(len(telemetry.Data))
+
+	// update first and last byte timestamp for the pass
+	if metrics.starpassTimeFirstByteReceived == nil {
+		metrics.starpassTimeFirstByteReceived = telemetry.TimeFirstByteReceived
+		metrics.localTimeFirstByteReceived = timestampNow()
+	}
+	metrics.starpassTimeLastByteReceived = telemetry.TimeLastByteReceived
+	metrics.localTimeLastByteReceived = timestampNow()
 
 	// save details for instantaneous rates
 	msg := telemetryWithTimestamp{
@@ -114,15 +132,92 @@ func (metrics *MetricsCollector) collectReceiver(frequency float64) {
 	metrics.frequency = frequency
 }
 
-// report collected statistics
+func toTime(ts *timestamp.Timestamp) *time.Time {
+	if ts == nil {
+		return nil
+	}
+	t := time.Unix(ts.Seconds, int64(ts.Nanos))
+	return &t
+}
+
+func timestampNow() *timestamp.Timestamp {
+	now := time.Now().UTC()
+	return &timestamp.Timestamp{
+		Seconds: now.Unix(),
+		Nanos:   int32(now.Nanosecond()),
+	}
+}
+
+func formatTimeLocal(ts *time.Time) string {
+	if ts == nil {
+		return ""
+	}
+	return ts.Format(time.RFC3339)
+}
+
+func formatTimestampLocal(ts *timestamp.Timestamp) string {
+	if ts == nil {
+		return ""
+	}
+	return toTime(ts).Format(time.RFC3339)
+}
+
+func formatTimestampUTC(ts *timestamp.Timestamp) string {
+	if ts == nil {
+		return ""
+	}
+	return toTime(ts).UTC().Format(time.RFC3339)
+}
+
+func duration(start, end *timestamp.Timestamp) string {
+	if start == nil || end == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s", toTime(end).Sub(*toTime(start)))
+}
+
+func (metrics *MetricsCollector) logReport() {
+	if metrics.totalMessagesReceived > 0 {
+		// create newline incase logger is in overwrite mode
+		logger := fmt.Printf
+		metrics.logStats()
+		logger("\n\n")
+
+		logger("[STATS] %s, Pass summary:\n", time.Now().Format("20060102 15:04:05"))
+		logger("\n")
+		logger("  Plan ID   : %s\n", metrics.planId)
+		logger("  Stream ID : %s\n", metrics.streamId)
+		logger("\n")
+		logger("  Datatake (Starpass timestamp)\n")
+		logger("  First byte received   : %s (UTC %s)\n", formatTimestampLocal(metrics.starpassTimeFirstByteReceived), formatTimestampUTC(metrics.starpassTimeFirstByteReceived))
+		logger("  Last  byte received   : %s (UTC %s)\n", formatTimestampLocal(metrics.starpassTimeLastByteReceived), formatTimestampUTC(metrics.starpassTimeLastByteReceived))
+		logger("  Duration              : %s\n", duration(metrics.starpassTimeFirstByteReceived, metrics.starpassTimeLastByteReceived))
+		logger("\n")
+		logger("  CLI data receive (local timestamp)\n")
+		logger("  First chunk received  : %s (%s after datatake first byte)\n", formatTimestampLocal(metrics.localTimeFirstByteReceived), duration(metrics.starpassTimeFirstByteReceived, metrics.localTimeFirstByteReceived))
+		logger("  Last  chunk received  : %s (%s after datatake last byte)\n", formatTimestampLocal(metrics.localTimeLastByteReceived), duration(metrics.starpassTimeLastByteReceived, metrics.localTimeLastByteReceived))
+		logger("  Total bytes received  : %s\n", humanReadableBytes(metrics.totalBytesReceived))
+		logger("  Total chunks (bytes)  : %d\n", metrics.totalMessagesReceived)
+		logger("  Average rate (bits/s) : %sbps\n", humanReadableCountSI(metrics.avgRate()))
+		logger("  Average delay         : %s\n", humanReadableNanoSeconds(metrics.avgDelay()))
+		logger("\n\n")
+
+		// display report
+		avgDelayNanos := humanReadableNanoSeconds(metrics.avgDelay())
+		rateStr := humanReadableCountSI(metrics.avgRate())
+		size := humanReadableBytes(metrics.totalBytesReceived)
+		logger("[STATS] %s, plan_id: %s, [DATA] %5d msgs, bytes: %s, rate: %sbps, delay: %s",
+			time.Now().Format("2006/01/02 15:04:05"), metrics.planId, metrics.totalMessagesReceived, size, rateStr, avgDelayNanos)
+	}
+}
+
+// report instantaneous statistics
 func (metrics *MetricsCollector) logStats() {
-	avgDelayNanos := humanReadableNanoSeconds(metrics.avgDelay())
 	iDelayNanos := humanReadableNanoSeconds(metrics.instantDelay())
-	rateStr := humanReadableCountSI(metrics.avgRate())
 	iRateStr := humanReadableCountSI(metrics.instantRate())
 	size := humanReadableBytes(metrics.totalBytesReceived)
-	metrics.logger("[STATS] %s, plan_id: %s, azm: %5.2f, ele: %5.1f, freq: %5.1f MHz [DATA] %5d msgs, bytes: %s, rate: %sbps (avg %sbps), delay: %s (avg %s)",
-		time.Now().Format("20060102 15:04:05"), metrics.planId, metrics.azimuth, metrics.elevation, metrics.frequency, metrics.totalMessagesReceived, size, iRateStr, rateStr, iDelayNanos, avgDelayNanos)
+	metrics.logger("[STATS] %s, plan_id: %s, azm: %5.2f, ele: %5.1f, freq: %5.1f MHz [DATA] %3d msgs, bytes: %9v, rate: %9vbps, delay: %9v",
+		time.Now().Format("20060102 15:04:05"), metrics.planId, metrics.azimuth, metrics.elevation, metrics.frequency, metrics.totalMessagesReceived, size, iRateStr, iDelayNanos)
 }
 
 // return avg rate for entire plan
@@ -178,7 +273,7 @@ func (metrics *MetricsCollector) instantRate() int64 {
 // ported from https://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java
 func humanReadableCountSI(bytes int64) string {
 	if -1000 < bytes && bytes < 1000 {
-		return fmt.Sprintf(" %5d ", bytes)
+		return fmt.Sprintf("%d ", bytes)
 	}
 	ci := "kMGTPE"
 	idx := 0
@@ -186,7 +281,7 @@ func humanReadableCountSI(bytes int64) string {
 		bytes /= 1000
 		idx++
 	}
-	return fmt.Sprintf("%5.1f %c", float64(bytes)/1000.0, ci[idx])
+	return fmt.Sprintf("%.1f %c", float64(bytes)/1000.0, ci[idx])
 }
 
 // converts typically bytes to human readable string (KiB, MiB, etc)
@@ -194,7 +289,7 @@ func humanReadableCountSI(bytes int64) string {
 // ported from https://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java
 func humanReadableBytes(bytes int64) string {
 	if -1024 < bytes && bytes < 1024 {
-		return fmt.Sprintf("  %5d B", bytes)
+		return fmt.Sprintf("%d B", bytes)
 	}
 	ci := "KMGTPE"
 	idx := 0
@@ -202,14 +297,14 @@ func humanReadableBytes(bytes int64) string {
 		bytes /= 1024
 		idx++
 	}
-	return fmt.Sprintf("%5.1f %ciB", float64(bytes)/1000.0, ci[idx])
+	return fmt.Sprintf("%.1f %ciB", float64(bytes)/1000.0, ci[idx])
 }
 
 // converts nanoseconds to human readable string (ns, µs, ms, s, m, h)
 func humanReadableNanoSeconds(delay int64) string {
 	var nanos = float32(delay)
 	if -1000 < nanos && nanos < 1000 {
-		return fmt.Sprintf(" %4.0f ns", nanos)
+		return fmt.Sprintf("%.0f ns", nanos)
 	}
 	ci := []string{"µs", "ms", "s ", "m ", "h "}
 	idx := 0
@@ -230,5 +325,5 @@ func humanReadableNanoSeconds(delay int64) string {
 			}
 		}
 	}
-	return fmt.Sprintf("%5.1f %s", nanos, ci[idx])
+	return fmt.Sprintf("%.1f %s", nanos, ci[idx])
 }

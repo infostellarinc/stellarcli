@@ -18,6 +18,9 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/golang/protobuf/ptypes/timestamp"
+	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 )
 
 func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
@@ -56,12 +59,41 @@ func TestDelay(t *testing.T) {
 	for i := int64(6); i < 1e15; i *= 10 {
 		t.Log(humanReadableNanoSeconds(i))
 	}
-	assertEqual(t, humanReadableNanoSeconds(1), "    1 ns", "")
-	assertEqual(t, humanReadableNanoSeconds(100), "  100 ns", "")
-	assertEqual(t, humanReadableNanoSeconds(1e3), "  1.0 µs", "")
-	assertEqual(t, humanReadableNanoSeconds(1e6), "  1.0 ms", "")
-	assertEqual(t, humanReadableNanoSeconds(6e9), "  6.0 s ", "")
-	assertEqual(t, humanReadableNanoSeconds(6e11), " 10.0 m ", "")
-	assertEqual(t, humanReadableNanoSeconds(6e13), " 16.7 h ", "")
+	assertEqual(t, humanReadableNanoSeconds(1), "1 ns", "")
+	assertEqual(t, humanReadableNanoSeconds(100), "100 ns", "")
+	assertEqual(t, humanReadableNanoSeconds(1e3), "1.0 µs", "")
+	assertEqual(t, humanReadableNanoSeconds(1e6), "1.0 ms", "")
+	assertEqual(t, humanReadableNanoSeconds(6e9), "6.0 s ", "")
+	assertEqual(t, humanReadableNanoSeconds(6e11), "10.0 m ", "")
+	assertEqual(t, humanReadableNanoSeconds(6e13), "16.7 h ", "")
 	assertEqual(t, humanReadableNanoSeconds(6e15), "1666.7 h ", "")
+}
+
+func ToTimestamp(t *time.Time) *timestamp.Timestamp {
+	return &timestamp.Timestamp{
+		Seconds: t.Unix(),
+		Nanos:   int32(t.Nanosecond()),
+	}
+}
+
+func createTelemetry(start *time.Time, durationMillis int) *stellarstation.Telemetry {
+	end := start.Add(time.Millisecond * time.Duration(durationMillis))
+	return &stellarstation.Telemetry{
+		TimeFirstByteReceived: ToTimestamp(start),
+		TimeLastByteReceived:  ToTimestamp(&end),
+		Data:                  make([]byte, 5),
+	}
+}
+
+func TestReport(t *testing.T) {
+	metrics := *NewMetricsCollector(t.Logf)
+	metrics.setPlanId("test_plan_1")
+	metrics.setStreamId("stream_1")
+	start := time.Now().Add(-time.Duration(5) * time.Minute)
+	for i := 0; i < 10; i++ {
+		start = start.Add(time.Millisecond * time.Duration(i*2000))
+		t1 := createTelemetry(&start, 2000)
+		metrics.collectTelemetry(t1)
+	}
+	metrics.logReport()
 }

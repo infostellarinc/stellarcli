@@ -216,6 +216,9 @@ func (ss *satelliteStream) recvLoop() {
 			logger.verbose("streamId: %v\n", res.StreamId)
 		}
 		ss.streamId = res.StreamId
+		if ss.showStats {
+			metrics.setStreamId(ss.streamId)
+		}
 
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
