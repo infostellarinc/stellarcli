@@ -313,21 +313,17 @@ func (ss *satelliteStream) openStream() error {
 }
 
 // register hook to print metric stats on interrupt (eg: ctrl-c)
-func registerShutdownHook(ss *satelliteStream) chan bool {
+func registerShutdownHook(ss *satelliteStream) {
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
-
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		_ = <-sigs
 		if ss.showStats {
 			metrics.logStats()
-			metrics.logReport()
-			log.Println()
 		}
 		done <- true
 	}()
-	return done
 }
 
 func (ss *satelliteStream) start() error {
@@ -343,13 +339,13 @@ func (ss *satelliteStream) start() error {
 		}
 	}
 
-	done := registerShutdownHook(ss)
+	registerShutdownHook(ss)
 
 	err := ss.openStream()
 	if err != nil {
 		return err
 	}
 	go ss.recvLoop()
-	<-done
+
 	return nil
 }
