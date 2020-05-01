@@ -331,10 +331,12 @@ func (ss *satelliteStream) start() error {
 	log.SetVerbose(ss.isVerbose)
 
 	// metric collector for data rate, total received size, etc
-	if ss.isVerbose || ss.isDebug {
-		metrics = *NewMetricsCollector(log.InfoThrottled)
-	} else {
-		metrics = *NewMetricsCollector(log.LastLine)
+	if ss.showStats {
+		if ss.isVerbose || ss.isDebug {
+			metrics = *NewMetricsCollector(log.InfoThrottled)
+		} else {
+			metrics = *NewMetricsCollector(log.LastLine)
+		}
 	}
 
 	registerShutdownHook(ss)
