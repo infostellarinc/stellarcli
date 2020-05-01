@@ -17,7 +17,8 @@ package tle
 import (
 	"context"
 	"fmt"
-	"log"
+
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/go-stellarstation/api/v1/orbit"

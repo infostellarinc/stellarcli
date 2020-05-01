@@ -16,9 +16,10 @@ package stream
 
 import (
 	"io"
-	"log"
 	"net"
 	"time"
+
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 )
 
 type tcpProxy struct {

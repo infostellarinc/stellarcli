@@ -16,13 +16,14 @@ package plan
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
+
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 

@@ -16,7 +16,6 @@ package apiclient
 
 import (
 	"crypto/tls"
-	"log"
 	"os"
 	"strings"
 
@@ -24,6 +23,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/infostellarinc/stellarcli/pkg/auth"
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 )
 
 // Dial opens a gRPC connection to the StellarStation API with authentication setup.

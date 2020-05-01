@@ -15,11 +15,11 @@
 package config
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 	homedir "github.com/mitchellh/go-homedir"
 )
 

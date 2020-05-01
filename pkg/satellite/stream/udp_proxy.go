@@ -15,10 +15,11 @@
 package stream
 
 import (
-	"log"
 	"net"
 	"sync"
 	"time"
+
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 )
 
 type udpProxy struct {
