@@ -197,7 +197,7 @@ func (metrics *MetricsCollector) logReport() {
 		logger("  First chunk received  : %s (%s after datatake first byte)\n", formatTimestampLocal(metrics.localTimeFirstByteReceived), duration(metrics.starpassTimeFirstByteReceived, metrics.localTimeFirstByteReceived))
 		logger("  Last  chunk received  : %s (%s after datatake last byte)\n", formatTimestampLocal(metrics.localTimeLastByteReceived), duration(metrics.starpassTimeLastByteReceived, metrics.localTimeLastByteReceived))
 		logger("  Total bytes received  : %s\n", humanReadableBytes(metrics.totalBytesReceived))
-		logger("  Total chunks (bytes)  : %d\n", metrics.totalMessagesReceived)
+		logger("  Total chunks          : %d\n", metrics.totalMessagesReceived)
 		logger("  Average rate (bits/s) : %sbps\n", humanReadableCountSI(metrics.avgRate()))
 		logger("  Average delay         : %s\n", humanReadableNanoSeconds(metrics.avgDelay()))
 		logger("\n\n")
