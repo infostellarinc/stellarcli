@@ -14,6 +14,8 @@
 
 package stream
 
+// run with "go test -v" in this folder to see output
+
 import (
 	"fmt"
 	"testing"

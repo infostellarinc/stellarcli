@@ -17,11 +17,8 @@ package stream
 import (
 	"context"
 	"io"
-	"os"
-	"os/signal"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -87,7 +84,7 @@ type satelliteStream struct {
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
-func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (SatelliteStream, error) {
+func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (SatelliteStream, func(), error) {
 	s := &satelliteStream{
 		acceptedFraming:    o.AcceptedFraming,
 		satelliteId:        o.SatelliteID,
@@ -104,9 +101,9 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		delayThreshold: o.DelayThreshold,
 	}
 
-	err := s.start()
+	cleanup, err := s.start()
 
-	return s, err
+	return s, cleanup, err
 }
 
 // Send sends a packet to the satellite.
@@ -312,21 +309,7 @@ func (ss *satelliteStream) openStream() error {
 	return nil
 }
 
-// register hook to print metric stats on interrupt (eg: ctrl-c)
-func registerShutdownHook(ss *satelliteStream) {
-	sigs := make(chan os.Signal, 1)
-	done := make(chan bool, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		_ = <-sigs
-		if ss.showStats {
-			metrics.logStats()
-		}
-		done <- true
-	}()
-}
-
-func (ss *satelliteStream) start() error {
+func (ss *satelliteStream) start() (func(), error) {
 	log.SetDebug(ss.isDebug)
 	log.SetVerbose(ss.isVerbose)
 
@@ -339,13 +322,17 @@ func (ss *satelliteStream) start() error {
 		}
 	}
 
-	registerShutdownHook(ss)
-
 	err := ss.openStream()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	go ss.recvLoop()
 
-	return nil
+	// return a cleanup function to exec on exit
+	cleanup := func() {
+		if ss.showStats {
+			metrics.logReport()
+		}
+	}
+	return cleanup, nil
 }

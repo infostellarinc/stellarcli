@@ -19,5 +19,5 @@ type Proxy interface {
 	// Close the proxy.
 	Close() error
 	// Start listening for packets to send to the satellite and sending back received packets.
-	Start(o *SatelliteStreamOptions) error
+	Start(o *SatelliteStreamOptions) (func(), error)
 }

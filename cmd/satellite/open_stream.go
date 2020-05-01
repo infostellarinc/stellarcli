@@ -84,12 +84,16 @@ func NewOpenStreamCommand() *cobra.Command {
 			signal.Notify(c, os.Interrupt)
 			defer close(c)
 
-			err := proxy.Start(o)
+			cleanup, err := proxy.Start(o)
 			if err != nil {
 				log.Fatalf("could not start proxy: %v\n", err)
 			}
 
 			<-c
+
+			if cleanup != nil {
+				cleanup()
+			}
 
 		},
 	}

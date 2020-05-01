@@ -50,9 +50,9 @@ type MetricsCollector struct {
 	logger                        func(format string, v ...interface{})
 }
 
-// run with "go test -v" in this folder to see output
+// NewMetricsCollector creates a stats collector
 func NewMetricsCollector(logger func(format string, v ...interface{})) *MetricsCollector {
-	logger("[STATS] using local time to calculate telemetry delay\n")
+	logger("[STATS] using local time to calculate telemetry delay")
 	return &MetricsCollector{
 		logger: logger,
 	}
