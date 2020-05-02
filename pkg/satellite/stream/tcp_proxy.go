@@ -16,9 +16,10 @@ package stream
 
 import (
 	"io"
-	"log"
 	"net"
 	"time"
+
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 )
 
 type tcpProxy struct {
@@ -54,9 +55,10 @@ func NewTCPProxy(o *TCPProxyOptions) (Proxy, error) {
 }
 
 // Start listening for packets to send to the satellite and sending back received packets.
-func (p *tcpProxy) Start(o *SatelliteStreamOptions) error {
+func (p *tcpProxy) Start(o *SatelliteStreamOptions) (func(), error) {
 	var err error
-	p.stream, err = OpenSatelliteStream(o, p.streamChan)
+	var cleanup func()
+	p.stream, cleanup, err = OpenSatelliteStream(o, p.streamChan)
 	if err != nil {
 		log.Fatalf("failed to connect to StellarStation: %v:", err)
 	}
@@ -77,7 +79,7 @@ func (p *tcpProxy) Start(o *SatelliteStreamOptions) error {
 
 	}()
 
-	return nil
+	return cleanup, nil
 }
 
 // Close the proxy.

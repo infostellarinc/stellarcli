@@ -1,4 +1,5 @@
-// Copyright © 2019 Infostellar, Inc.
+//
+// Copyright © 2020 Infostellar, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stream
+package flag
 
-// Proxy is the interface to send and receive packets.
-type Proxy interface {
-	// Close the proxy.
-	Close() error
-	// Start listening for packets to send to the satellite and sending back received packets.
-	Start(o *SatelliteStreamOptions) (func(), error)
+import "github.com/spf13/cobra"
+
+type StatsFlag struct {
+	ShowStats bool
+}
+
+// Add flags to the command.
+func (f *StatsFlag) AddFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&f.ShowStats, "stats", "", false, "Output telemetry stats information. (default false)")
+}
+
+// Validate flag values.
+func (f *StatsFlag) Validate() error {
+	return nil
+}
+
+// Create a new StatsFlag.
+func NewStatsFlag() *StatsFlag {
+	return &StatsFlag{}
 }

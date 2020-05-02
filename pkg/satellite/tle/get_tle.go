@@ -16,10 +16,10 @@ package tle
 
 import (
 	"context"
-	"log"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 

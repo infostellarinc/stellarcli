@@ -15,10 +15,11 @@
 package stream
 
 import (
-	"log"
 	"net"
 	"sync"
 	"time"
+
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 )
 
 type udpProxy struct {
@@ -74,19 +75,20 @@ func NewUDPProxy(o *UDPProxyOptions) (Proxy, error) {
 }
 
 // Start listening for packets to send to the satellite and sending back received packets.
-func (p *udpProxy) Start(o *SatelliteStreamOptions) error {
+func (p *udpProxy) Start(o *SatelliteStreamOptions) (func(), error) {
 
 	var err error
-	p.stream, err = OpenSatelliteStream(o, p.streamChan)
+	var cleanup func()
+	p.stream, cleanup, err = OpenSatelliteStream(o, p.streamChan)
 	if err != nil {
-		return err
+		return cleanup, err
 	}
 
 	p.closeWg.Add(2)
 	go p.sendLoop()
 	go p.recvLoop()
 
-	return nil
+	return cleanup, nil
 }
 
 // Close the proxy.

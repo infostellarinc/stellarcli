@@ -16,7 +16,6 @@ package auth
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -24,6 +23,7 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 
 	"github.com/infostellarinc/stellarcli/pkg/config"
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 )
 
 // NewDefaultCredentials initializes gRPC credentials using Stellar Default Credentials.

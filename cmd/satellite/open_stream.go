@@ -45,7 +45,8 @@ func NewOpenStreamCommand() *cobra.Command {
 	planIdFlag := flag.NewPlanIdFlag()
 	proxyFlags := flag.NewProxyFlags()
 	verboseFlag := flag.NewVerboseFlags()
-	flags := flag.NewFlagSet(correctOrderFlags, debugFlag, framingFlags, openStreamFlag, planIdFlag, proxyFlags, verboseFlag)
+	statsFlag := flag.NewStatsFlag()
+	flags := flag.NewFlagSet(correctOrderFlags, debugFlag, framingFlags, openStreamFlag, planIdFlag, proxyFlags, verboseFlag, statsFlag)
 
 	command := &cobra.Command{
 		Use:   openStreamUse,
@@ -73,6 +74,7 @@ func NewOpenStreamCommand() *cobra.Command {
 				StreamId:        openStreamFlag.StreamId,
 				IsDebug:         debugFlag.IsDebug,
 				IsVerbose:       verboseFlag.IsVerbose,
+				ShowStats:       statsFlag.ShowStats,
 
 				CorrectOrder:   correctOrderFlags.CorrectOrder,
 				DelayThreshold: correctOrderFlags.DelayThreshold,
@@ -82,12 +84,16 @@ func NewOpenStreamCommand() *cobra.Command {
 			signal.Notify(c, os.Interrupt)
 			defer close(c)
 
-			err := proxy.Start(o)
+			cleanup, err := proxy.Start(o)
 			if err != nil {
 				log.Fatalf("could not start proxy: %v\n", err)
 			}
 
 			<-c
+
+			if cleanup != nil {
+				cleanup()
+			}
 
 		},
 	}

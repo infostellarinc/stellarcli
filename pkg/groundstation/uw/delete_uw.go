@@ -17,10 +17,10 @@ package uw
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/infostellarinc/go-stellarstation/api/v1/groundstation"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 

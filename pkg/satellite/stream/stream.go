@@ -17,7 +17,6 @@ package stream
 import (
 	"context"
 	"io"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -29,6 +28,7 @@ import (
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 	"github.com/infostellarinc/stellarcli/pkg/util/collection"
 )
 
@@ -39,6 +39,8 @@ const (
 
 const MaxElapsedTime = 60 * time.Second
 
+var metrics MetricsCollector
+
 type SatelliteStreamOptions struct {
 	AcceptedFraming []stellarstation.Framing
 	AcceptedPlanId  []string
@@ -46,6 +48,7 @@ type SatelliteStreamOptions struct {
 	StreamId        string
 	IsDebug         bool
 	IsVerbose       bool
+	ShowStats       bool
 
 	CorrectOrder   bool
 	DelayThreshold time.Duration
@@ -71,6 +74,7 @@ type satelliteStream struct {
 	state          uint32
 	isDebug        bool
 	isVerbose      bool
+	showStats      bool
 	acceptedPlanId []string
 
 	correctOrder   bool
@@ -80,7 +84,7 @@ type satelliteStream struct {
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
-func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (SatelliteStream, error) {
+func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (SatelliteStream, func(), error) {
 	s := &satelliteStream{
 		acceptedFraming:    o.AcceptedFraming,
 		satelliteId:        o.SatelliteID,
@@ -90,15 +94,16 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		recvLoopClosedChan: make(chan struct{}),
 		isDebug:            o.IsDebug,
 		isVerbose:          o.IsVerbose,
+		showStats:          o.ShowStats,
 		acceptedPlanId:     o.AcceptedPlanId,
 
 		correctOrder:   o.CorrectOrder,
 		delayThreshold: o.DelayThreshold,
 	}
 
-	err := s.start()
+	cleanup, err := s.start()
 
-	return s, err
+	return s, cleanup, err
 }
 
 // Send sends a packet to the satellite.
@@ -112,9 +117,7 @@ func (ss *satelliteStream) Send(payload []byte) error {
 		},
 	}
 
-	if ss.isVerbose {
-		log.Printf("sent data: size: %d bytes\n", len(payload))
-	}
+	log.Verbose("sent data: size: %d bytes\n", len(payload))
 
 	return ss.stream.Send(&req)
 }
@@ -204,22 +207,30 @@ func (ss *satelliteStream) recvLoop() {
 			}
 			log.Println("connected to the API stream.")
 		}
-		if ss.isVerbose && ss.streamId != res.StreamId {
-			log.Printf("streamId: %v\n", res.StreamId)
+		if ss.streamId != res.StreamId {
+			log.Verbose("streamId: %v\n", res.StreamId)
 		}
 		ss.streamId = res.StreamId
+		if ss.showStats {
+			metrics.setStreamId(ss.streamId)
+		}
 
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			planId := res.GetReceiveTelemetryResponse().PlanId
+			if ss.showStats {
+				metrics.setPlanId(planId)
+			}
 			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
 				break
 			}
 
 			telemetry := res.GetReceiveTelemetryResponse().Telemetry
 			payload := telemetry.Data
-			if ss.isDebug {
-				log.Printf("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+			log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+			if ss.showStats {
+				metrics.collectTelemetry(telemetry)
+				metrics.logStats()
 			}
 			if ss.correctOrder {
 				go func() {
@@ -232,18 +243,29 @@ func (ss *satelliteStream) recvLoop() {
 			}
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
 			planId := res.GetStreamEvent().GetPlanMonitoringEvent().PlanId
+			if ss.showStats {
+				metrics.setPlanId(planId) // reset statistics when new plan detected
+			}
 			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
 				break
 			}
 
-			if ss.isVerbose {
+			if ss.isVerbose || ss.showStats {
 				if gsState := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gsState != nil {
 					if a := gsState.Antenna; a != nil {
-						log.Printf("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
+						log.Verbose("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
+						if ss.showStats {
+							metrics.collectAntenna(a.Azimuth.Measured, a.Elevation.Measured)
+							metrics.logStats()
+						}
 					}
 
 					if rcv := gsState.Receiver; rcv != nil {
-						log.Printf("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
+						log.Verbose("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
+						if ss.showStats {
+							metrics.collectReceiver(float64(gsState.Receiver.CenterFrequencyHz) / 1e6)
+							metrics.logStats()
+						}
 					}
 				}
 
@@ -280,19 +302,37 @@ func (ss *satelliteStream) openStream() error {
 
 	ss.conn = conn
 	ss.stream = stream
-	if ss.isVerbose && ss.streamId != "" {
-		log.Printf("streamId: %v\n", ss.streamId)
+	if ss.streamId != "" {
+		log.Verbose("streamId: %v\n", ss.streamId)
 	}
 
 	return nil
 }
 
-func (ss *satelliteStream) start() error {
+func (ss *satelliteStream) start() (func(), error) {
+	log.SetDebug(ss.isDebug)
+	log.SetVerbose(ss.isVerbose)
+
+	// metric collector for data rate, total received size, etc
+	if ss.showStats {
+		if ss.isVerbose || ss.isDebug {
+			metrics = *NewMetricsCollector(log.InfoThrottled)
+		} else {
+			metrics = *NewMetricsCollector(log.LastLine)
+		}
+	}
+
 	err := ss.openStream()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	go ss.recvLoop()
 
-	return nil
+	// return a cleanup function to exec on exit
+	cleanup := func() {
+		if ss.showStats {
+			metrics.logReport()
+		}
+	}
+	return cleanup, nil
 }
