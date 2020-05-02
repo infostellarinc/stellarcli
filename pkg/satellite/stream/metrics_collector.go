@@ -22,7 +22,10 @@ import (
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 )
 
+// InstantMinSamples - Minimum number of samples to calculate instantaneous stats with (rate & delay)
 const InstantMinSamples = 5
+
+// InstantSampleSeconds - Duration of data samples to calculate instantaneous stats with
 const InstantSampleSeconds = 5
 
 type telemetryWithTimestamp struct {
@@ -31,6 +34,7 @@ type telemetryWithTimestamp struct {
 	TimeLastByteReceived *timestamp.Timestamp
 }
 
+// MetricsCollector holds metrics used to display pass report and instantaneous stats
 type MetricsCollector struct {
 	planId                        string
 	streamId                      string
