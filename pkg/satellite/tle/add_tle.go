@@ -18,11 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/infostellarinc/stellarcli/pkg/logger"
-
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/go-stellarstation/api/v1/orbit"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
 	"github.com/infostellarinc/stellarcli/util/printer"
 )
 
