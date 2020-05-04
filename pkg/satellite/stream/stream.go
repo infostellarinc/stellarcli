@@ -316,7 +316,7 @@ func (ss *satelliteStream) start() (func(), error) {
 	// metric collector for data rate, total received size, etc
 	if ss.showStats {
 		if ss.isVerbose || ss.isDebug {
-			metrics = *NewMetricsCollector(log.InfoThrottled)
+			metrics = *NewMetricsCollector(log.PrintlnThrottled)
 		} else {
 			metrics = *NewMetricsCollector(log.LastLine)
 		}
