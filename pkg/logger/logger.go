@@ -17,14 +17,23 @@ package logger
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 )
 
 var lastLoggedTimestamp time.Time
-var emitRateMillis = 500
+var emitRateMillis = 2000
 var isVerbose = false
 var isDebug = false
 var isNewLine = true
+var lastThrottledLine *string
+var throttleCheckSchedulerRunning = false
+var throttleSchedulerLock sync.Mutex
+
+// SetEmitRateMillis sets the throttle rate for throttle log methods
+func SetEmitRateMillis(e int) {
+	emitRateMillis = e
+}
 
 // SetVerbose enables or disables verbose logs
 func SetVerbose(v bool) {
@@ -36,8 +45,8 @@ func SetDebug(d bool) {
 	isDebug = d
 }
 
-// writes to log un-throttled
-func info(format string, v ...interface{}) {
+// Info writes to log un-throttled
+func Info(format string, v ...interface{}) {
 	lineCheck()
 	log.Printf(format, v...)
 }
@@ -56,6 +65,16 @@ func Printf(format string, v ...interface{}) {
 	log.Printf(format, v...)
 }
 
+// PrintlnThrottled writes to stdout (via fmt) but is throttled by emitRateMillis; throttled messages are dropped
+func PrintlnThrottled(format string, v ...interface{}) {
+	if throttleCheck() {
+		lineCheck()
+		fmt.Printf(format+"\n", v...)
+	} else {
+		deferPrint(format, v...)
+	}
+}
+
 // Fatalf is equivalent to Printf() followed by a call to os.Exit(1).
 func Fatalf(format string, v ...interface{}) {
 	lineCheck()
@@ -68,13 +87,7 @@ func Fatal(v ...interface{}) {
 	log.Fatal(v...)
 }
 
-// writes to log but is throttled by emitRateMillis; throttled messages are dropped
-func InfoThrottled(format string, v ...interface{}) {
-	if throttleCheck() {
-		log.Printf(format, v...)
-	}
-}
-
+// Verbose writes to log iff verbose is set
 func Verbose(format string, v ...interface{}) {
 	if isVerbose {
 		lineCheck()
@@ -82,21 +95,10 @@ func Verbose(format string, v ...interface{}) {
 	}
 }
 
-func VerboseThrottled(format string, v ...interface{}) {
-	if isVerbose && throttleCheck() {
-		log.Printf(format, v...)
-	}
-}
-
+// Debug writes to log iff debug is set
 func Debug(format string, v ...interface{}) {
 	if isDebug {
 		lineCheck()
-		log.Printf(format, v...)
-	}
-}
-
-func DebugThrottled(format string, v ...interface{}) {
-	if isDebug && throttleCheck() {
 		log.Printf(format, v...)
 	}
 }
@@ -124,7 +126,35 @@ func LastLine(format string, v ...interface{}) {
 	isNewLine = false
 }
 
-// LastLine overwrites last line of stdout without creating a new line, throttled
+func deferPrint(format string, v ...interface{}) {
+	s := fmt.Sprintf(format+"\n", v...)
+	lastThrottledLine = &s
+
+	throttleSchedulerLock.Lock()
+	if !throttleCheckSchedulerRunning {
+		throttleCheckSchedulerRunning = true
+		go scheduleDeferLogCheck()
+	}
+	throttleSchedulerLock.Unlock()
+}
+
+func scheduleDeferLogCheck() {
+	uptimeTicker := time.NewTicker(time.Duration(emitRateMillis) / 5 * time.Millisecond)
+	for {
+		<-uptimeTicker.C
+		if lastThrottledLine != nil && throttleCheck() {
+			lineCheck()
+			fmt.Printf("%s", *lastThrottledLine)
+			lastThrottledLine = nil
+			throttleSchedulerLock.Lock()
+			throttleCheckSchedulerRunning = false
+			throttleSchedulerLock.Unlock()
+			return
+		}
+	}
+}
+
+// LastLineThrottled overwrites last line of stdout without creating a new line, throttled
 func LastLineThrottled(format string, v ...interface{}) {
 	if throttleCheck() {
 		LastLine(format, v...)

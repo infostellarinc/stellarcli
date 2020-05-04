@@ -182,11 +182,9 @@ func duration(start, end *timestamp.Timestamp) string {
 
 func (metrics *MetricsCollector) logReport() {
 	if metrics.totalMessagesReceived > 0 {
-		// create newline incase logger is in overwrite mode
+		// Dont use metrics.logger because it might be in overwrite mode
 		logger := fmt.Printf
-		metrics.logStats()
 		logger("\n\n")
-
 		logger("[STATS] %s, Pass summary:\n", time.Now().Format("20060102 15:04:05"))
 		logger("\n")
 		logger("  Plan ID   : %s\n", metrics.planId)
@@ -205,13 +203,6 @@ func (metrics *MetricsCollector) logReport() {
 		logger("  Average rate (bits/s) : %sbps\n", humanReadableCountSI(metrics.avgRate()))
 		logger("  Average delay         : %s\n", humanReadableNanoSeconds(metrics.avgDelay()))
 		logger("\n\n")
-
-		// display report
-		avgDelayNanos := humanReadableNanoSeconds(metrics.avgDelay())
-		rateStr := humanReadableCountSI(metrics.avgRate())
-		size := humanReadableBytes(metrics.totalBytesReceived)
-		logger("[STATS] %s, plan_id: %s, [DATA] %5d msgs, bytes: %s, rate: %sbps, delay: %s",
-			time.Now().Format("2006/01/02 15:04:05"), metrics.planId, metrics.totalMessagesReceived, size, rateStr, avgDelayNanos)
 	}
 }
 
