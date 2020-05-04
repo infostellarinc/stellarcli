@@ -26,6 +26,7 @@ stellar satellite open-stream [satellite-id] [flags]
       --proxy string               Proxy protocol. One of: udp|tcp (default "udp")
       --send-host string           Deprecated: use udp-send-host instead.
       --send-port uint16           Deprecated: use udp-send-port instead.
+      --stats                      Output telemetry stats information and generates pass reports. (default false)
   -r, --stream-id string           The StreamId to resume.
       --tcp-listen-host string     The host to listen for TCP connection on. (default "127.0.0.1")
       --tcp-listen-port uint16     The port used to communicate with satellite. Clients can receive and send data through the port. (default 6001)
