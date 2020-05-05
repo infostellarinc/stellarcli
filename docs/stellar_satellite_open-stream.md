@@ -15,7 +15,7 @@ stellar satellite open-stream [satellite-id] [flags]
 ### Options
 
 ```
-      --accepted-framing strings   Framing type to receive. One of: BITSTREAM|AX25|IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL
+      --accepted-framing strings   Framing type to receive. One of: IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM|AX25
       --accepted-plan-id strings   Plan ID(s) to accept data from.
       --correct-order              When set to true, packets will be sorted by time_first_byte_received. This feature is alpha quality.
       --debug                      Output debug information. (default false)
@@ -26,6 +26,7 @@ stellar satellite open-stream [satellite-id] [flags]
       --proxy string               Proxy protocol. One of: udp|tcp (default "udp")
       --send-host string           Deprecated: use udp-send-host instead.
       --send-port uint16           Deprecated: use udp-send-port instead.
+      --stats                      [Alpha feature] Output telemetry stats information and generate pass summaries (default false)
   -r, --stream-id string           The StreamId to resume.
       --tcp-listen-host string     The host to listen for TCP connection on. (default "127.0.0.1")
       --tcp-listen-port uint16     The port used to communicate with satellite. Clients can receive and send data through the port. (default 6001)
