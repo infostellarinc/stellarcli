@@ -26,7 +26,7 @@ import (
 const InstantMinSamples = 5
 
 // InstantMaxSamples - Maximum number of samples to calculate instantaneous stats with (rate & delay)
-const InstantMaxSamples = 100
+const InstantMaxSamples = 1000
 
 // InstantSampleSeconds - Duration of data samples to calculate instantaneous stats with
 const InstantSampleSeconds = 5
