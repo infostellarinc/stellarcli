@@ -26,7 +26,7 @@ import (
 const InstantMinSamples = 5
 
 // InstantMaxSamples - Maximum number of samples to calculate instantaneous stats with (rate & delay)
-const InstantMaxSamples = 50
+const InstantMaxSamples = 100
 
 // InstantSampleSeconds - Duration of data samples to calculate instantaneous stats with
 const InstantSampleSeconds = 5
@@ -106,13 +106,20 @@ func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Tele
 	metrics.starpassTimeLastByteReceived = telemetry.TimeLastByteReceived
 	metrics.localTimeLastByteReceived = timestampNow()
 
-	// save details for instantaneous rates
-	msg := telemetryWithTimestamp{
-		ReceivedTime:         time.Now(),
-		DataBytes:            len(telemetry.Data),
-		TimeLastByteReceived: telemetry.TimeLastByteReceived,
+	if len(metrics.messageBuffer) == 0 || metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano() < time.Now().UnixNano()-(1e6) {
+		// if no samples, or most recent sample arrive later than 1 milliseconds of last sample, save details for instantaneous rates
+		msg := telemetryWithTimestamp{
+			ReceivedTime:         time.Now(),
+			DataBytes:            len(telemetry.Data),
+			TimeLastByteReceived: telemetry.TimeLastByteReceived,
+		}
+		metrics.messageBuffer = append(metrics.messageBuffer, msg)
+	} else {
+		// merge sample with newest sample if current timestamp is within 1 milliseconds of most recent sample
+		// this is done to improve stats reporting performance, but we discard instantaneous info about TimeLastByteReceived
+		metrics.messageBuffer[len(metrics.messageBuffer)-1].DataBytes += len(telemetry.Data)
 	}
-	metrics.messageBuffer = append(metrics.messageBuffer, msg)
+
 	// Keep 5 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
 	// 1. list larger than InstantMinSamples && oldest sample is older than "now - InstantSampleSeconds"
 	// 2. list larger than InstantMaxSamples
@@ -252,6 +259,7 @@ func (metrics *MetricsCollector) avgRate() int64 {
 // returns the instantaneous data rate
 func (metrics *MetricsCollector) instantRate() int64 {
 	if len(metrics.messageBuffer) < 3 {
+		fmt.Println(len(metrics.messageBuffer))
 		return 0
 	}
 	bytes := int64(0)
@@ -261,7 +269,7 @@ func (metrics *MetricsCollector) instantRate() int64 {
 			bytes += int64(msg.DataBytes)
 		}
 	}
-	duration := (metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano() - metrics.messageBuffer[0].ReceivedTime.UnixNano()) / 1e9
+	duration := float64(metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano()-metrics.messageBuffer[0].ReceivedTime.UnixNano()) / float64(1e9)
 	if duration == 0 {
 		return 0
 	}
