@@ -342,7 +342,7 @@ func humanReadableNanoSeconds(delay int64) string {
 // StartStatsEmitScheduler this should be ran in separate thred
 func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis int) {
 	metrics.throttleCheckSchedulerRunning = true
-	uptimeTicker := time.NewTicker(time.Duration(emitRateMillis) / time.Millisecond)
+	uptimeTicker := time.NewTicker(time.Duration(emitRateMillis) * time.Millisecond)
 	for {
 		<-uptimeTicker.C
 		if metrics.throttleCheckSchedulerRunning {
