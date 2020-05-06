@@ -109,19 +109,12 @@ func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Tele
 	metrics.starpassTimeLastByteReceived = telemetry.TimeLastByteReceived
 	metrics.localTimeLastByteReceived = timestampNow()
 
-	if len(metrics.messageBuffer) == 0 || metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano() < time.Now().UnixNano()-(1e6) {
-		// if no samples, or most recent sample arrive later than 1 milliseconds of last sample, save details for instantaneous rates
-		msg := telemetryWithTimestamp{
-			ReceivedTime:         time.Now(),
-			DataBytes:            len(telemetry.Data),
-			TimeLastByteReceived: telemetry.TimeLastByteReceived,
-		}
-		metrics.messageBuffer = append(metrics.messageBuffer, msg)
-	} else {
-		// merge sample with newest sample if current timestamp is within 1 milliseconds of most recent sample
-		// this is done to improve stats reporting performance, but we discard instantaneous info about TimeLastByteReceived
-		metrics.messageBuffer[len(metrics.messageBuffer)-1].DataBytes += len(telemetry.Data)
+	msg := telemetryWithTimestamp{
+		ReceivedTime:         time.Now(),
+		DataBytes:            len(telemetry.Data),
+		TimeLastByteReceived: telemetry.TimeLastByteReceived,
 	}
+	metrics.messageBuffer = append(metrics.messageBuffer, msg)
 
 	// Keep 5 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
 	// 1. list larger than InstantMinSamples && oldest sample is older than "now - InstantSampleSeconds"
