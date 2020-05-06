@@ -109,6 +109,7 @@ func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Tele
 	metrics.starpassTimeLastByteReceived = telemetry.TimeLastByteReceived
 	metrics.localTimeLastByteReceived = timestampNow()
 
+	// save details for instantaneous rates
 	msg := telemetryWithTimestamp{
 		ReceivedTime:         time.Now(),
 		DataBytes:            len(telemetry.Data),
@@ -332,7 +333,7 @@ func humanReadableNanoSeconds(delay int64) string {
 	return fmt.Sprintf("%.1f %s", nanos, ci[idx])
 }
 
-// StartStatsEmitScheduler this should be ran in separate thred
+// StartStatsEmitScheduler this should be ran in separate thread
 func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis int) {
 	metrics.throttleCheckSchedulerRunning = true
 	uptimeTicker := time.NewTicker(time.Duration(emitRateMillis) * time.Millisecond)
@@ -356,7 +357,7 @@ func (metrics *MetricsCollector) StartStatsEmitScheduler(emitRateMillis int) {
 	go metrics.startStatsEmitSchedulerWorker(emitRateMillis)
 }
 
-// StopStatsEmitScheduler stop the emittting stats process
+// StopStatsEmitScheduler stop the emitting stats process
 func (metrics *MetricsCollector) StopStatsEmitScheduler(emitRateMillis int) {
 	metrics.throttleCheckSchedulerRunning = false
 }
