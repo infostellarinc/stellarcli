@@ -39,17 +39,17 @@ type telemetryWithTimestamp struct {
 
 // MetricsCollector holds metrics used to display pass report and instantaneous stats
 type MetricsCollector struct {
-	planId                        string
-	streamId                      string
-	timerStart                    time.Time
-	elapsed                       float64
-	totalBytesReceived            int64
-	totalMessagesReceived         int64
-	azimuth                       float64
-	elevation                     float64
-	frequency                     float64
-	delayNanos                    int64
-	throttleCheckSchedulerRunning bool
+	planId                string
+	streamId              string
+	timerStart            time.Time
+	elapsed               float64
+	totalBytesReceived    int64
+	totalMessagesReceived int64
+	azimuth               float64
+	elevation             float64
+	frequency             float64
+	delayNanos            int64
+	statsLoggingScheduler bool
 
 	messageBuffer                 []telemetryWithTimestamp
 	starpassTimeFirstByteReceived *timestamp.Timestamp
@@ -63,8 +63,8 @@ type MetricsCollector struct {
 func NewMetricsCollector(logger func(format string, v ...interface{})) *MetricsCollector {
 	logger("[STATS] using local time to calculate telemetry delay")
 	return &MetricsCollector{
-		logger:                        logger,
-		throttleCheckSchedulerRunning: false,
+		logger:                logger,
+		statsLoggingScheduler: false,
 	}
 }
 
@@ -335,11 +335,11 @@ func humanReadableNanoSeconds(delay int64) string {
 
 // StartStatsEmitScheduler this should be ran in separate thread
 func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis int) {
-	metrics.throttleCheckSchedulerRunning = true
+	metrics.statsLoggingScheduler = true
 	uptimeTicker := time.NewTicker(time.Duration(emitRateMillis) * time.Millisecond)
 	for {
 		<-uptimeTicker.C
-		if metrics.throttleCheckSchedulerRunning {
+		if metrics.statsLoggingScheduler {
 			// check for expired samples
 			for len(metrics.messageBuffer) > 0 && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
 				metrics.messageBuffer = metrics.messageBuffer[1:]
@@ -359,5 +359,5 @@ func (metrics *MetricsCollector) StartStatsEmitScheduler(emitRateMillis int) {
 
 // StopStatsEmitScheduler stop the emitting stats process
 func (metrics *MetricsCollector) StopStatsEmitScheduler(emitRateMillis int) {
-	metrics.throttleCheckSchedulerRunning = false
+	metrics.statsLoggingScheduler = false
 }
