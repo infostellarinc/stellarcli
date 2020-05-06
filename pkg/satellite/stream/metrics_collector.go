@@ -49,6 +49,8 @@ type MetricsCollector struct {
 	elevation                     float64
 	frequency                     float64
 	delayNanos                    int64
+	throttleCheckSchedulerRunning bool
+
 	messageBuffer                 []telemetryWithTimestamp
 	starpassTimeFirstByteReceived *timestamp.Timestamp
 	starpassTimeLastByteReceived  *timestamp.Timestamp
@@ -86,6 +88,7 @@ func (metrics *MetricsCollector) reset() {
 	metrics.elevation = 0
 	metrics.frequency = 0
 	metrics.delayNanos = 0
+	metrics.throttleCheckSchedulerRunning = false
 	metrics.messageBuffer = make([]telemetryWithTimestamp, 0)
 	metrics.starpassTimeFirstByteReceived = nil
 	metrics.starpassTimeLastByteReceived = nil
@@ -334,4 +337,29 @@ func humanReadableNanoSeconds(delay int64) string {
 		}
 	}
 	return fmt.Sprintf("%.1f %s", nanos, ci[idx])
+}
+
+// StartStatsEmitScheduler this should be ran in separate thred
+func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis int) {
+	metrics.throttleCheckSchedulerRunning = true
+	uptimeTicker := time.NewTicker(time.Duration(emitRateMillis) / time.Millisecond)
+	for {
+		<-uptimeTicker.C
+		if metrics.throttleCheckSchedulerRunning {
+			metrics.logStats()
+		} else {
+			// stop scheduler
+			return
+		}
+	}
+}
+
+// StartStatsEmitScheduler start process to emit stats at defined interval
+func (metrics *MetricsCollector) StartStatsEmitScheduler(emitRateMillis int) {
+	go metrics.startStatsEmitSchedulerWorker(emitRateMillis)
+}
+
+// StopStatsEmitScheduler stop the emittting stats process
+func (metrics *MetricsCollector) StopStatsEmitScheduler(emitRateMillis int) {
+	metrics.throttleCheckSchedulerRunning = false
 }

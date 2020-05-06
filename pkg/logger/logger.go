@@ -58,6 +58,13 @@ func Println(v ...interface{}) {
 	log.Println(v...)
 }
 
+// PrintfRawLn calls Output to print to the standard stdout (without logger).
+// Arguments are handled in the manner of fmt.Printf.
+func PrintfRawLn(format string, v ...interface{}) {
+	lineCheck()
+	fmt.Printf(format+"\n", v...)
+}
+
 // Printf calls Output to print to the standard
 // Arguments are handled in the manner of fmt.Printf.
 func Printf(format string, v ...interface{}) {
@@ -71,7 +78,7 @@ func PrintlnThrottled(format string, v ...interface{}) {
 		lineCheck()
 		fmt.Printf(format+"\n", v...)
 	} else {
-		deferPrint(format, v...)
+		deferPrint(format+"\n", v...)
 	}
 }
 
@@ -127,7 +134,7 @@ func LastLine(format string, v ...interface{}) {
 }
 
 func deferPrint(format string, v ...interface{}) {
-	s := fmt.Sprintf(format+"\n", v...)
+	s := fmt.Sprintf(format, v...)
 	lastThrottledLine = &s
 
 	throttleSchedulerLock.Lock()
@@ -159,5 +166,7 @@ func LastLineThrottled(format string, v ...interface{}) {
 	if throttleCheck() {
 		LastLine(format, v...)
 		isNewLine = false
+	} else {
+		deferPrint("\r"+format+" ", v...)
 	}
 }
