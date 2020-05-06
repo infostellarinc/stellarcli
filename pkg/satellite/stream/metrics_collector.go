@@ -63,7 +63,8 @@ type MetricsCollector struct {
 func NewMetricsCollector(logger func(format string, v ...interface{})) *MetricsCollector {
 	logger("[STATS] using local time to calculate telemetry delay")
 	return &MetricsCollector{
-		logger: logger,
+		logger:                        logger,
+		throttleCheckSchedulerRunning: false,
 	}
 }
 
@@ -88,7 +89,6 @@ func (metrics *MetricsCollector) reset() {
 	metrics.elevation = 0
 	metrics.frequency = 0
 	metrics.delayNanos = 0
-	metrics.throttleCheckSchedulerRunning = false
 	metrics.messageBuffer = make([]telemetryWithTimestamp, 0)
 	metrics.starpassTimeFirstByteReceived = nil
 	metrics.starpassTimeLastByteReceived = nil
