@@ -259,7 +259,6 @@ func (metrics *MetricsCollector) avgRate() int64 {
 // returns the instantaneous data rate
 func (metrics *MetricsCollector) instantRate() int64 {
 	if len(metrics.messageBuffer) < 3 {
-		fmt.Println(len(metrics.messageBuffer))
 		return 0
 	}
 	bytes := int64(0)
