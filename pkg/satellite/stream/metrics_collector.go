@@ -347,7 +347,7 @@ func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis in
 		<-uptimeTicker.C
 		if metrics.throttleCheckSchedulerRunning {
 			// check for expired samples
-			for metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
+			for len(metrics.messageBuffer) > 0 && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
 				metrics.messageBuffer = metrics.messageBuffer[1:]
 			}
 			metrics.logStats()
