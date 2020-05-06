@@ -25,6 +25,9 @@ import (
 // InstantMinSamples - Minimum number of samples to calculate instantaneous stats with (rate & delay)
 const InstantMinSamples = 5
 
+// InstantMaxSamples - Maximum number of samples to calculate instantaneous stats with (rate & delay)
+const InstantMaxSamples = 50
+
 // InstantSampleSeconds - Duration of data samples to calculate instantaneous stats with
 const InstantSampleSeconds = 5
 
@@ -110,8 +113,11 @@ func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Tele
 		TimeLastByteReceived: telemetry.TimeLastByteReceived,
 	}
 	metrics.messageBuffer = append(metrics.messageBuffer, msg)
-	// always keep 5 seconds worth of dta, but no less than 5 samples
-	for len(metrics.messageBuffer) > InstantMinSamples && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
+	// Keep 5 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
+	// 1. list larger than InstantMinSamples && oldest sample is older than "now - InstantSampleSeconds"
+	// 2. list larger than InstantMaxSamples
+	for (len(metrics.messageBuffer) > InstantMinSamples && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9)) ||
+		len(metrics.messageBuffer) > InstantMaxSamples {
 		metrics.messageBuffer = metrics.messageBuffer[1:]
 	}
 }
