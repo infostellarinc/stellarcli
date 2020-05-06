@@ -23,7 +23,7 @@ type StatsFlag struct {
 
 // Add flags to the command.
 func (f *StatsFlag) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&f.ShowStats, "stats", "", false, "Output telemetry stats information and generates pass reports. (default false)")
+	cmd.Flags().BoolVarP(&f.ShowStats, "stats", "", false, "[Alpha feature] Output telemetry stats information and generate pass summaries (default false)")
 }
 
 // Validate flag values.
