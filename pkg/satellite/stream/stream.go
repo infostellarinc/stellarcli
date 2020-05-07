@@ -230,7 +230,6 @@ func (ss *satelliteStream) recvLoop() {
 			log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
 			if ss.showStats {
 				metrics.collectTelemetry(telemetry)
-				metrics.logStats()
 			}
 			if ss.correctOrder {
 				go func() {
@@ -256,7 +255,6 @@ func (ss *satelliteStream) recvLoop() {
 						log.Verbose("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
 						if ss.showStats {
 							metrics.collectAntenna(a.Azimuth.Measured, a.Elevation.Measured)
-							metrics.logStats()
 						}
 					}
 
@@ -264,7 +262,6 @@ func (ss *satelliteStream) recvLoop() {
 						log.Verbose("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
 						if ss.showStats {
 							metrics.collectReceiver(float64(gsState.Receiver.CenterFrequencyHz) / 1e6)
-							metrics.logStats()
 						}
 					}
 				}
@@ -316,9 +313,11 @@ func (ss *satelliteStream) start() (func(), error) {
 	// metric collector for data rate, total received size, etc
 	if ss.showStats {
 		if ss.isVerbose || ss.isDebug {
-			metrics = *NewMetricsCollector(log.PrintlnThrottled)
+			metrics = *NewMetricsCollector(log.PrintfRawLn)
+			metrics.StartStatsEmitScheduler(2000)
 		} else {
 			metrics = *NewMetricsCollector(log.LastLine)
+			metrics.StartStatsEmitScheduler(500)
 		}
 	}
 

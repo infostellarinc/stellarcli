@@ -25,6 +25,9 @@ import (
 // InstantMinSamples - Minimum number of samples to calculate instantaneous stats with (rate & delay)
 const InstantMinSamples = 5
 
+// InstantMaxSamples - Maximum number of samples to calculate instantaneous stats with (rate & delay)
+const InstantMaxSamples = 1000
+
 // InstantSampleSeconds - Duration of data samples to calculate instantaneous stats with
 const InstantSampleSeconds = 5
 
@@ -36,16 +39,18 @@ type telemetryWithTimestamp struct {
 
 // MetricsCollector holds metrics used to display pass report and instantaneous stats
 type MetricsCollector struct {
-	planId                        string
-	streamId                      string
-	timerStart                    time.Time
-	elapsed                       float64
-	totalBytesReceived            int64
-	totalMessagesReceived         int64
-	azimuth                       float64
-	elevation                     float64
-	frequency                     float64
-	delayNanos                    int64
+	planId                string
+	streamId              string
+	timerStart            time.Time
+	elapsed               float64
+	totalBytesReceived    int64
+	totalMessagesReceived int64
+	azimuth               float64
+	elevation             float64
+	frequency             float64
+	delayNanos            int64
+	statsLoggingScheduler bool
+
 	messageBuffer                 []telemetryWithTimestamp
 	starpassTimeFirstByteReceived *timestamp.Timestamp
 	starpassTimeLastByteReceived  *timestamp.Timestamp
@@ -58,7 +63,8 @@ type MetricsCollector struct {
 func NewMetricsCollector(logger func(format string, v ...interface{})) *MetricsCollector {
 	logger("[STATS] using local time to calculate telemetry delay")
 	return &MetricsCollector{
-		logger: logger,
+		logger:                logger,
+		statsLoggingScheduler: false,
 	}
 }
 
@@ -110,8 +116,12 @@ func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Tele
 		TimeLastByteReceived: telemetry.TimeLastByteReceived,
 	}
 	metrics.messageBuffer = append(metrics.messageBuffer, msg)
-	// always keep 5 seconds worth of dta, but no less than 5 samples
-	for len(metrics.messageBuffer) > InstantMinSamples && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
+
+	// Keep 5 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
+	// 1. list larger than InstantMinSamples && oldest sample is older than "now - InstantSampleSeconds"
+	// 2. list larger than InstantMaxSamples
+	for (len(metrics.messageBuffer) > InstantMinSamples && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9)) ||
+		len(metrics.messageBuffer) > InstantMaxSamples {
 		metrics.messageBuffer = metrics.messageBuffer[1:]
 	}
 }
@@ -255,7 +265,7 @@ func (metrics *MetricsCollector) instantRate() int64 {
 			bytes += int64(msg.DataBytes)
 		}
 	}
-	duration := (metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano() - metrics.messageBuffer[0].ReceivedTime.UnixNano()) / 1e9
+	duration := float64(metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano()-metrics.messageBuffer[0].ReceivedTime.UnixNano()) / float64(1e9)
 	if duration == 0 {
 		return 0
 	}
@@ -321,4 +331,33 @@ func humanReadableNanoSeconds(delay int64) string {
 		}
 	}
 	return fmt.Sprintf("%.1f %s", nanos, ci[idx])
+}
+
+// StartStatsEmitScheduler this should be ran in separate thread
+func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis int) {
+	metrics.statsLoggingScheduler = true
+	uptimeTicker := time.NewTicker(time.Duration(emitRateMillis) * time.Millisecond)
+	for {
+		<-uptimeTicker.C
+		if metrics.statsLoggingScheduler {
+			// check for expired samples
+			for len(metrics.messageBuffer) > 0 && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
+				metrics.messageBuffer = metrics.messageBuffer[1:]
+			}
+			metrics.logStats()
+		} else {
+			// stop scheduler
+			return
+		}
+	}
+}
+
+// StartStatsEmitScheduler start process to emit stats at defined interval
+func (metrics *MetricsCollector) StartStatsEmitScheduler(emitRateMillis int) {
+	go metrics.startStatsEmitSchedulerWorker(emitRateMillis)
+}
+
+// StopStatsEmitScheduler stop the emitting stats process
+func (metrics *MetricsCollector) StopStatsEmitScheduler(emitRateMillis int) {
+	metrics.statsLoggingScheduler = false
 }
