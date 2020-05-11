@@ -31,8 +31,8 @@ var (
 	openStreamUse   = util.Normalize("open-stream [satellite-id]")
 	openStreamShort = util.Normalize("Opens a proxy to stream packets to and from a satellite.")
 	openStreamLong  = util.Normalize(
-		`Opens a proxy to stream packets to and from a satellite. Currently only
-		UDP is supported. Packets received by the proxy will be sent with the specified framing to
+		`Opens a proxy to stream packets to and from a satellite. Both TCP and UDP are supported but
+		TCP is preferred. Packets received by the proxy will be sent with the specified framing to
 		the satellite and any incoming packets will be returned as is.`)
 )
 
