@@ -191,7 +191,7 @@ func duration(start, end *timestamp.Timestamp) string {
 }
 
 func (metrics *MetricsCollector) logReport() {
-	if metrics.totalMessagesReceived > 0 {
+	if metrics.totalMessagesReceived >= 0 {
 		// Dont use metrics.logger because it might be in overwrite mode
 		logger := fmt.Printf
 		logger("\n\n")

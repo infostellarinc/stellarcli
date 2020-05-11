@@ -218,9 +218,9 @@ func (ss *satelliteStream) recvLoop() {
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			planId := res.GetReceiveTelemetryResponse().PlanId
-			if ss.showStats {
-				metrics.setPlanId(planId)
-			}
+			// if ss.showStats {
+			// 	metrics.setPlanId(planId)
+			// }
 			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
 				break
 			}
@@ -253,16 +253,16 @@ func (ss *satelliteStream) recvLoop() {
 				if gsState := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gsState != nil {
 					if a := gsState.Antenna; a != nil {
 						log.Verbose("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
-						if ss.showStats {
-							metrics.collectAntenna(a.Azimuth.Measured, a.Elevation.Measured)
-						}
+						// if ss.showStats {
+						// 	metrics.collectAntenna(a.Azimuth.Measured, a.Elevation.Measured)
+						// }
 					}
 
 					if rcv := gsState.Receiver; rcv != nil {
 						log.Verbose("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
-						if ss.showStats {
-							metrics.collectReceiver(float64(gsState.Receiver.CenterFrequencyHz) / 1e6)
-						}
+						// if ss.showStats {
+						// 	metrics.collectReceiver(float64(gsState.Receiver.CenterFrequencyHz) / 1e6)
+						// }
 					}
 				}
 
