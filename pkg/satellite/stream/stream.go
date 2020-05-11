@@ -218,6 +218,9 @@ func (ss *satelliteStream) recvLoop() {
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			planId := res.GetReceiveTelemetryResponse().PlanId
+			if ss.showStats {
+				metrics.setPlanId(planId)
+			}
 			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
 				break
 			}
@@ -239,9 +242,6 @@ func (ss *satelliteStream) recvLoop() {
 			}
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
 			planId := res.GetStreamEvent().GetPlanMonitoringEvent().PlanId
-			if ss.showStats {
-				metrics.setPlanId(planId) // reset statistics when new plan detected
-			}
 			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
 				break
 			}
