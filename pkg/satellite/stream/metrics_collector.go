@@ -98,24 +98,27 @@ func (metrics *MetricsCollector) reset() {
 
 // collects metrics for telemetry data message
 func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Telemetry) {
-	metrics.delayNanos += time.Now().UTC().UnixNano() - ((telemetry.TimeLastByteReceived.Seconds * 1e9) + int64(telemetry.TimeLastByteReceived.Nanos))
-	metrics.collectMessage(len(telemetry.Data))
+	if telemetry != nil && telemetry.TimeLastByteReceived != nil && telemetry.Data != nil && len(telemetry.Data) > 0 {
+		// sum of delay of all data messages
+		metrics.delayNanos += time.Now().UTC().UnixNano() - ((telemetry.TimeLastByteReceived.Seconds * 1e9) + int64(telemetry.TimeLastByteReceived.Nanos))
+		metrics.collectMessage(len(telemetry.Data))
 
-	// update first and last byte timestamp for the pass
-	if metrics.starpassTimeFirstByteReceived == nil {
-		metrics.starpassTimeFirstByteReceived = telemetry.TimeFirstByteReceived
-		metrics.localTimeFirstByteReceived = timestampNow()
-	}
-	metrics.starpassTimeLastByteReceived = telemetry.TimeLastByteReceived
-	metrics.localTimeLastByteReceived = timestampNow()
+		// update first and last byte timestamp for the pass
+		if metrics.starpassTimeFirstByteReceived == nil {
+			metrics.starpassTimeFirstByteReceived = telemetry.TimeFirstByteReceived
+			metrics.localTimeFirstByteReceived = timestampNow()
+		}
+		metrics.starpassTimeLastByteReceived = telemetry.TimeLastByteReceived
+		metrics.localTimeLastByteReceived = timestampNow()
 
-	// save details for instantaneous rates
-	msg := telemetryWithTimestamp{
-		ReceivedTime:         time.Now(),
-		DataBytes:            len(telemetry.Data),
-		TimeLastByteReceived: telemetry.TimeLastByteReceived,
+		// save details for instantaneous rates
+		msg := telemetryWithTimestamp{
+			ReceivedTime:         time.Now(),
+			DataBytes:            len(telemetry.Data),
+			TimeLastByteReceived: telemetry.TimeLastByteReceived,
+		}
+		metrics.messageBuffer = append(metrics.messageBuffer, msg)
 	}
-	metrics.messageBuffer = append(metrics.messageBuffer, msg)
 
 	// Keep 5 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
 	// 1. list larger than InstantMinSamples && oldest sample is older than "now - InstantSampleSeconds"
@@ -240,14 +243,16 @@ func (metrics *MetricsCollector) instantDelay() int64 {
 	}
 	delayNanos := int64(0)
 	for _, msg := range metrics.messageBuffer {
-		delayNanos += msg.ReceivedTime.UTC().UnixNano() - ((msg.TimeLastByteReceived.Seconds * 1e9) + int64(msg.TimeLastByteReceived.Nanos))
+		if msg.TimeLastByteReceived != nil {
+			delayNanos += msg.ReceivedTime.UTC().UnixNano() - ((msg.TimeLastByteReceived.Seconds * 1e9) + int64(msg.TimeLastByteReceived.Nanos))
+		}
 	}
 	return delayNanos / int64(len(metrics.messageBuffer))
 }
 
 // return avg rate for entire plan
 func (metrics *MetricsCollector) avgRate() int64 {
-	if metrics.totalMessagesReceived > 0 {
+	if metrics.totalMessagesReceived > 0 && metrics.elapsed > 0 {
 		return int64(float64(metrics.totalBytesReceived) / metrics.elapsed * 8.00)
 	}
 	return 0
