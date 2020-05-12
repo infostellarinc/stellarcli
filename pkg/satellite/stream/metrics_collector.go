@@ -30,7 +30,7 @@ const InstantMinSamples = 5
 const InstantMaxSamples = 1000
 
 // InstantSampleSeconds - Duration of data samples to calculate instantaneous stats with
-const InstantSampleSeconds = 5
+const InstantSampleSeconds = 10
 
 type telemetryWithTimestamp struct {
 	ReceivedTime         time.Time
