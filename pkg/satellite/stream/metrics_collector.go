@@ -100,18 +100,20 @@ func (metrics *MetricsCollector) reset() {
 
 // collects metrics for telemetry data message
 func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Telemetry) {
-	if telemetry != nil && telemetry.TimeLastByteReceived != nil && telemetry.Data != nil && len(telemetry.Data) > 0 {
+	if telemetry != nil && telemetry.TimeFirstByteReceived != nil && telemetry.TimeLastByteReceived != nil && telemetry.Data != nil && len(telemetry.Data) > 0 {
 		// sum of delay of all data messages
 		metrics.delayNanos += time.Now().UTC().UnixNano() - ((telemetry.TimeLastByteReceived.Seconds * 1e9) + int64(telemetry.TimeLastByteReceived.Nanos))
 		metrics.collectMessage(len(telemetry.Data))
 
 		// update first and last byte timestamp for the pass
-		if metrics.starpassTimeFirstByteReceived == nil {
+		if metrics.starpassTimeFirstByteReceived == nil || toTime(metrics.starpassTimeFirstByteReceived).After(*toTime(telemetry.TimeFirstByteReceived)) {
 			metrics.starpassTimeFirstByteReceived = telemetry.TimeFirstByteReceived
 			metrics.localTimeFirstByteReceived = timestampNow()
 		}
-		metrics.starpassTimeLastByteReceived = telemetry.TimeLastByteReceived
-		metrics.localTimeLastByteReceived = timestampNow()
+		if metrics.starpassTimeLastByteReceived == nil || toTime(metrics.starpassTimeLastByteReceived).Before(*toTime(telemetry.TimeLastByteReceived)) {
+			metrics.starpassTimeLastByteReceived = telemetry.TimeLastByteReceived
+			metrics.localTimeLastByteReceived = timestampNow()
+		}
 
 		// save details for instantaneous rates
 		msg := telemetryWithTimestamp{
