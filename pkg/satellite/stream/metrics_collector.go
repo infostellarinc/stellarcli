@@ -16,6 +16,7 @@ package stream
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -50,6 +51,7 @@ type MetricsCollector struct {
 	frequency             float64
 	delayNanos            int64
 	statsLoggingScheduler bool
+	writeLock             sync.Mutex
 
 	messageBuffer                 []telemetryWithTimestamp
 	starpassTimeFirstByteReceived *timestamp.Timestamp
@@ -117,15 +119,17 @@ func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Tele
 			DataBytes:            len(telemetry.Data),
 			TimeLastByteReceived: telemetry.TimeLastByteReceived,
 		}
+		metrics.writeLock.Lock()
 		metrics.messageBuffer = append(metrics.messageBuffer, msg)
-	}
 
-	// Keep 5 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
-	// 1. list larger than InstantMinSamples && oldest sample is older than "now - InstantSampleSeconds"
-	// 2. list larger than InstantMaxSamples
-	for (len(metrics.messageBuffer) > InstantMinSamples && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9)) ||
-		len(metrics.messageBuffer) > InstantMaxSamples {
-		metrics.messageBuffer = metrics.messageBuffer[1:]
+		// Keep 5 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
+		// 1. list larger than InstantMinSamples && oldest sample is older than "now - InstantSampleSeconds"
+		// 2. list larger than InstantMaxSamples
+		for (len(metrics.messageBuffer) > InstantMinSamples && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9)) ||
+			len(metrics.messageBuffer) > InstantMaxSamples {
+			metrics.messageBuffer = metrics.messageBuffer[1:]
+		}
+		metrics.writeLock.Unlock()
 	}
 }
 
@@ -242,6 +246,8 @@ func (metrics *MetricsCollector) instantDelay() int64 {
 		return 0
 	}
 	delayNanos := int64(0)
+	metrics.writeLock.Lock()
+	defer metrics.writeLock.Unlock()
 	for _, msg := range metrics.messageBuffer {
 		if msg.TimeLastByteReceived != nil {
 			delayNanos += msg.ReceivedTime.UTC().UnixNano() - ((msg.TimeLastByteReceived.Seconds * 1e9) + int64(msg.TimeLastByteReceived.Nanos))
@@ -264,6 +270,7 @@ func (metrics *MetricsCollector) instantRate() int64 {
 		return 0
 	}
 	bytes := int64(0)
+	metrics.writeLock.Lock()
 	for i, msg := range metrics.messageBuffer {
 		if i > 0 {
 			// we discard the first message size, but use its ReceivedTime as the "start time" for rate calculations
@@ -271,6 +278,7 @@ func (metrics *MetricsCollector) instantRate() int64 {
 		}
 	}
 	duration := float64(metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano()-metrics.messageBuffer[0].ReceivedTime.UnixNano()) / float64(1e9)
+	metrics.writeLock.Unlock()
 	if duration == 0 {
 		return 0
 	}
@@ -346,9 +354,11 @@ func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis in
 		<-uptimeTicker.C
 		if metrics.statsLoggingScheduler {
 			// check for expired samples
+			metrics.writeLock.Lock()
 			for len(metrics.messageBuffer) > 0 && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
 				metrics.messageBuffer = metrics.messageBuffer[1:]
 			}
+			metrics.writeLock.Unlock()
 			metrics.logStats()
 		} else {
 			// stop scheduler
