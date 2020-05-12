@@ -279,7 +279,10 @@ func (metrics *MetricsCollector) instantRate() int64 {
 			bytes += int64(msg.DataBytes)
 		}
 	}
-	duration := float64(metrics.messageBuffer[len(metrics.messageBuffer)-1].ReceivedTime.UnixNano()-metrics.messageBuffer[0].ReceivedTime.UnixNano()) / float64(1e9)
+	startTime := metrics.messageBuffer[0].ReceivedTime
+	lastChunk := metrics.messageBuffer[len(metrics.messageBuffer)-1]
+	endTime := lastChunk.ReceivedTime
+	duration := float64(endTime.UnixNano()-startTime.UnixNano()) / float64(1e9)
 	metrics.writeLock.Unlock()
 	if duration == 0 {
 		return 0
@@ -357,8 +360,11 @@ func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis in
 		if metrics.statsLoggingScheduler {
 			// check for expired samples
 			metrics.writeLock.Lock()
-			for len(metrics.messageBuffer) > 0 && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9) {
-				metrics.messageBuffer = metrics.messageBuffer[1:]
+			if len(metrics.messageBuffer) > 0 {
+				lastChunk := metrics.messageBuffer[len(metrics.messageBuffer)-1]
+				if lastChunk.ReceivedTime.Before(time.Now().Add(-time.Duration(InstantSampleSeconds) * time.Second)) {
+					metrics.messageBuffer = make([]telemetryWithTimestamp, 0)
+				}
 			}
 			metrics.writeLock.Unlock()
 			metrics.logStats()
