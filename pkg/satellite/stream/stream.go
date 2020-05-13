@@ -207,6 +207,9 @@ func (ss *satelliteStream) recvLoop() {
 			}
 			log.Println("connected to the API stream.")
 		}
+		if res == nil {
+			continue
+		}
 		if ss.streamId != res.StreamId {
 			log.Verbose("streamId: %v\n", res.StreamId)
 		}
@@ -217,7 +220,11 @@ func (ss *satelliteStream) recvLoop() {
 
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
-			planId := res.GetReceiveTelemetryResponse().PlanId
+			telResponse := res.GetReceiveTelemetryResponse()
+			if telResponse == nil {
+				break
+			}
+			planId := telResponse.PlanId
 			if ss.showStats {
 				metrics.setPlanId(planId)
 			}
@@ -225,7 +232,10 @@ func (ss *satelliteStream) recvLoop() {
 				break
 			}
 
-			telemetry := res.GetReceiveTelemetryResponse().Telemetry
+			telemetry := telResponse.Telemetry
+			if telemetry == nil {
+				break
+			}
 			payload := telemetry.Data
 			log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
 			if ss.showStats {
@@ -241,19 +251,24 @@ func (ss *satelliteStream) recvLoop() {
 				ss.recvChan <- payload
 			}
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
-			planId := res.GetStreamEvent().GetPlanMonitoringEvent().PlanId
+			if res.GetStreamEvent() == nil || res.GetStreamEvent().GetPlanMonitoringEvent() == nil {
+				break
+			}
+			streamEvent := res.GetStreamEvent()
+			monitoringEvent := streamEvent.GetPlanMonitoringEvent()
+			planId := monitoringEvent.PlanId
 			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
 				break
 			}
 
 			if ss.isVerbose {
-				if gsState := res.GetStreamEvent().GetPlanMonitoringEvent().GetGroundStationState(); gsState != nil {
-					if a := gsState.Antenna; a != nil {
+				if gsState := monitoringEvent.GetGroundStationState(); gsState != nil {
+					if a := gsState.Antenna; a != nil && a.Azimuth != nil && a.Elevation != nil {
 						log.Verbose("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
 					}
 
 					if rcv := gsState.Receiver; rcv != nil {
-						log.Verbose("central frequency (MHz): %.2f\n", float64(gsState.Receiver.CenterFrequencyHz)/1e6)
+						log.Verbose("central frequency (MHz): %.2f\n", float64(rcv.CenterFrequencyHz)/1e6)
 					}
 				}
 

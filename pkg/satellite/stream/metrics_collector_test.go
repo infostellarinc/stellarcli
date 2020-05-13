@@ -40,10 +40,11 @@ func TestMetricLogging(t *testing.T) {
 	metrics.setPlanId("plan1")
 	for i := 1; i <= 10e17; i *= 4 {
 		metrics.collectMessage(i)
-		t := time.Now().Add(-time.Duration(i) * time.Millisecond)
+		t := time.Now().Add(-time.Duration(i) * time.Nanosecond)
 		metrics.collectTelemetry(&stellarstation.Telemetry{
-			Data:                 make([]byte, 5, 5),
-			TimeLastByteReceived: ToTimestamp(&t),
+			Data:                  make([]byte, 5, 5),
+			TimeFirstByteReceived: ToTimestamp(&t),
+			TimeLastByteReceived:  ToTimestamp(&t),
 		})
 		metrics.logStats()
 		time.Sleep(time.Millisecond * time.Duration(50))
