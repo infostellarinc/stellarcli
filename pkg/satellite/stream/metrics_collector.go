@@ -124,7 +124,7 @@ func (metrics *MetricsCollector) collectTelemetry(telemetry *stellarstation.Tele
 		metrics.writeLock.Lock()
 		metrics.messageBuffer = append(metrics.messageBuffer, msg)
 
-		// Keep 5 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
+		// Keep 10 seconds worth of samples, but no less than InstantMinSamples samples, and no more than InstantMaxSamples; remove oldest sample if:
 		// 1. list larger than InstantMinSamples && oldest sample is older than "now - InstantSampleSeconds"
 		// 2. list larger than InstantMaxSamples
 		for (len(metrics.messageBuffer) > InstantMinSamples && metrics.messageBuffer[0].ReceivedTime.UnixNano() < time.Now().UnixNano()-(InstantSampleSeconds*1e9)) ||
