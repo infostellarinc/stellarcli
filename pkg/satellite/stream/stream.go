@@ -237,7 +237,7 @@ func (ss *satelliteStream) recvLoop() {
 				break
 			}
 			payload := telemetry.Data
-			log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+			log.Debug("received data: streamId: %v, planId: %s, index: %d, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Index, telemetry.Framing, len(payload))
 			if ss.showStats {
 				metrics.collectTelemetry(telemetry)
 			}
@@ -249,6 +249,22 @@ func (ss *satelliteStream) recvLoop() {
 				}()
 			} else {
 				ss.recvChan <- payload
+
+				// send ack
+				if telResponse.Telemetry.Index > 0 {
+					req := stellarstation.SatelliteStreamRequest{
+						SatelliteId: ss.satelliteId,
+						Request: &stellarstation.SatelliteStreamRequest_TelemetryReceivedAck{
+							TelemetryReceivedAck: &stellarstation.ReceiveTelemetryAck{
+								PlanId:            planId,
+								TelemetryIndex:    telResponse.Telemetry.Index,
+								ReceivedTimestamp: timestampNow(),
+							},
+						},
+					}
+					log.Info("sending ack index: %v", telResponse.Telemetry.Index)
+					ss.stream.Send(&req)
+				}
 			}
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
 			if res.GetStreamEvent() == nil || res.GetStreamEvent().GetPlanMonitoringEvent() == nil {
@@ -292,9 +308,11 @@ func (ss *satelliteStream) openStream() error {
 	}
 
 	req := stellarstation.SatelliteStreamRequest{
-		AcceptedFraming: ss.acceptedFraming,
-		SatelliteId:     ss.satelliteId,
-		StreamId:        ss.streamId,
+		AcceptedFraming:      ss.acceptedFraming,
+		SatelliteId:          ss.satelliteId,
+		StreamId:             ss.streamId,
+		ResumeTelemetryIndex: 1,
+		EnableFlowControl:    true,
 	}
 
 	err = stream.Send(&req)
