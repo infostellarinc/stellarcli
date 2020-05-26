@@ -41,6 +41,8 @@ github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NH
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/infostellarinc/go-stellarstation v0.8.0 h1:rpGrzmYIIj40hAIgii33gsh1shTH1SDATuTuLAKkasw=
 github.com/infostellarinc/go-stellarstation v0.8.0/go.mod h1:Pmo6ejsQ9Squvsb6Kuv4pgDOHvJhacOU4TEo1XAlp3A=
+github.com/infostellarinc/go-stellarstation v0.8.1-0.20200526102722-a9b2921a835a h1:CbYp+PwsnHxiWLG8NRkXfUh1ZoYGoa6eCPU235poguI=
+github.com/infostellarinc/go-stellarstation v0.8.1-0.20200526102722-a9b2921a835a/go.mod h1:++wmnJPPi8D/sdVeqST85CVqEbIquJ1DMOQJFrTqjTI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
