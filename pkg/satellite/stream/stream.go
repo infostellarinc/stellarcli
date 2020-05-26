@@ -262,7 +262,7 @@ func (ss *satelliteStream) recvLoop() {
 							},
 						},
 					}
-					log.Info("sending ack index: %v", telResponse.Telemetry.Index)
+					log.Debug("sending ack index: %v", telResponse.Telemetry.Index)
 					ss.stream.Send(&req)
 				}
 			}
