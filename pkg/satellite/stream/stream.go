@@ -138,6 +138,7 @@ func (ss *satelliteStream) recvLoop() {
 	// Initialize exponential back off settings.
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
+	telemetryIndex := uint64(0)
 
 	pq := collection.NewPriorityQueue((*stellarstation.Telemetry)(nil), func(i, j interface{}) bool {
 		telemetry1 := i.(*stellarstation.Telemetry)
@@ -185,7 +186,7 @@ func (ss *satelliteStream) recvLoop() {
 			log.Println("reconnecting to the API stream.")
 
 			rcErr := backoff.RetryNotify(func() error {
-				err := ss.openStream()
+				err := ss.openStream(telemetryIndex + 1)
 				if err != nil {
 					return err
 				}
@@ -250,19 +251,20 @@ func (ss *satelliteStream) recvLoop() {
 			} else {
 				ss.recvChan <- payload
 
-				// send ack
-				if telResponse.Telemetry.Index > 0 {
+				// send ack & update index
+				telemetryIndex = telemetry.Index
+				if telemetryIndex > 0 {
 					req := stellarstation.SatelliteStreamRequest{
 						SatelliteId: ss.satelliteId,
 						Request: &stellarstation.SatelliteStreamRequest_TelemetryReceivedAck{
 							TelemetryReceivedAck: &stellarstation.ReceiveTelemetryAck{
 								PlanId:            planId,
-								TelemetryIndex:    telResponse.Telemetry.Index,
+								TelemetryIndex:    telemetryIndex,
 								ReceivedTimestamp: timestampNow(),
 							},
 						},
 					}
-					log.Debug("sending ack index: %v", telResponse.Telemetry.Index)
+					log.Debug("sending ack index: %v", telemetryIndex)
 					ss.stream.Send(&req)
 				}
 			}
@@ -293,7 +295,7 @@ func (ss *satelliteStream) recvLoop() {
 	}
 }
 
-func (ss *satelliteStream) openStream() error {
+func (ss *satelliteStream) openStream(resumeTelemetryIndex uint64) error {
 	conn, err := apiclient.Dial()
 	if err != nil {
 		return err
@@ -311,7 +313,7 @@ func (ss *satelliteStream) openStream() error {
 		AcceptedFraming:      ss.acceptedFraming,
 		SatelliteId:          ss.satelliteId,
 		StreamId:             ss.streamId,
-		ResumeTelemetryIndex: 1,
+		ResumeTelemetryIndex: resumeTelemetryIndex,
 		EnableFlowControl:    true,
 	}
 
@@ -345,7 +347,7 @@ func (ss *satelliteStream) start() (func(), error) {
 		}
 	}
 
-	err := ss.openStream()
+	err := ss.openStream(1)
 	if err != nil {
 		return nil, err
 	}
