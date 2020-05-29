@@ -160,6 +160,7 @@ func ListPlans(o *ListOptions) {
 			"unitPrice":          plan.UnitPrice,
 			"maxElevationDegree": plan.MaxElevationDegrees,
 			"maxElevationTime":   maxElevationTime,
+			"telemetryMetadata":  plan.TelemetryMetadata,
 		}
 		results = append(results, obj)
 	}
