@@ -22,7 +22,7 @@ type VerboseFlags struct {
 
 // Add flags to the command.
 func (f *VerboseFlags) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&f.IsVerbose, "verbose", "v", false, "Output more information. (default false)")
+	cmd.Flags().BoolVarP(&f.IsVerbose, "verbose", "v", false, "Output more information in JSON format. (default false)")
 }
 
 // Validate flag values.
