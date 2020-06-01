@@ -2,6 +2,7 @@ package printer
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"io"
 	"log"
@@ -50,16 +51,21 @@ func (p *JSONPrinter) Write(r []interface{}) {
 
 // Write fields with the template.
 func (p *JSONPrinter) WriteWithTemplate(r []map[string]interface{}, t []TemplateItem) {
-	jsonBytes, err := json.MarshalIndent(r, "", p.Options.Indent)
-	if err != nil {
-		log.Fatal(err)
+	encBuffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(encBuffer)
+	encoder.SetEscapeHTML(false)
+	encErr := encoder.Encode(r)
+	if encErr != nil {
+		log.Fatal(encErr)
 	}
 
-	_, err = p.writer.Write(jsonBytes)
-	if err != nil {
-		log.Fatal(err)
+	indBuffer := &bytes.Buffer{}
+	indErr := json.Indent(indBuffer, encBuffer.Bytes(), "", p.Options.Indent)
+	if indErr != nil {
+		log.Fatal(indErr)
 	}
 
+	p.writer.Write(indBuffer.Bytes())
 	p.writer.WriteString("\n")
 }
 
