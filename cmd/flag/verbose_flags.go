@@ -15,8 +15,9 @@
 package flag
 
 import (
-	"github.com/spf13/cobra"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 type VerboseFlags struct {
