@@ -25,7 +25,7 @@ import (
 func main() {
 	stellar := cmd.NewRootCommand()
 	stellar.DisableAutoGenTag = true
-	err := doc.GenMarkdownTree(stellar, "../../../docs")
+	err := doc.GenMarkdownTree(stellar, "./docs")
 	if err != nil {
 		log.Fatal(err)
 	}
