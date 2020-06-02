@@ -14,7 +14,10 @@
 
 package flag
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"strings"
+)
 
 type VerboseFlags struct {
 	IsVerbose bool
@@ -22,7 +25,11 @@ type VerboseFlags struct {
 
 // Add flags to the command.
 func (f *VerboseFlags) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&f.IsVerbose, "verbose", "v", false, "Output more information in JSON format. (default false)")
+	message := "Output more information in JSON format. (default false)"
+	if strings.HasPrefix(cmd.Use, "open-stream") {
+		message = "Output more information. (default false)"
+	}
+	cmd.Flags().BoolVarP(&f.IsVerbose, "verbose", "v", false, message)
 }
 
 // Validate flag values.
