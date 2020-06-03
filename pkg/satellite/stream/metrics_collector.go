@@ -232,7 +232,7 @@ func (metrics *MetricsCollector) logStats() {
 	iRateStr := humanReadableCountSI(metrics.instantRate())
 	size := humanReadableBytes(metrics.totalBytesReceived)
 	if metrics.planId != "" {
-		metrics.logger("%s planId: %s, %3d msgs, bytes: %9v, rate: %9vbps, delay: %9v",
+		fmt.Printf("%s planId: %s, %3d msgs, bytes: %9v, rate: %9vbps, delay: %9v\n",
 			time.Now().Format("2006/01/02 15:04:05"), metrics.planId, metrics.totalMessagesReceived, size, iRateStr, iDelayNanos)
 	}
 }
