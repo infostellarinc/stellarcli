@@ -17,6 +17,7 @@ package stream
 import (
 	"context"
 	"io"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -264,7 +265,7 @@ func (ss *satelliteStream) recvLoop() {
 							},
 						},
 					}
-					log.Debug("sending ack index: %v", telemetryMessageAckId)
+					log.Debug("sending ack index: %v\n", telemetryMessageAckId)
 					ss.stream.Send(&req)
 				}
 			}
@@ -336,6 +337,7 @@ func (ss *satelliteStream) openStream(resumeStreamMessageAckId string) error {
 }
 
 func (ss *satelliteStream) start() (func(), error) {
+	runtime.GOMAXPROCS(4)
 	log.SetDebug(ss.isDebug)
 	log.SetVerbose(ss.isVerbose)
 
