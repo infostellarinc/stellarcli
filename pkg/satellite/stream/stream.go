@@ -269,7 +269,7 @@ func (ss *satelliteStream) recvLoop() {
 					ss.recvChan <- payload
 				}
 
-				// send ack & update telemetryMessageAckId incase we need to resume from disconnects
+				// send ack & update telemetryMessageAckId in case we need to resume from disconnects
 				telemetryMessageAckId = telResponse.MessageAckId
 				ss.ackReceivedTelemetry(telResponse.MessageAckId)
 			}
