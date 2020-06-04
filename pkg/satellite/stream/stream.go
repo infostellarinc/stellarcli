@@ -15,8 +15,10 @@
 package stream
 
 import (
+	"bufio"
 	"context"
 	"io"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -49,6 +51,7 @@ type SatelliteStreamOptions struct {
 	IsDebug         bool
 	IsVerbose       bool
 	ShowStats       bool
+	TelemetryFile   *os.File
 
 	CorrectOrder   bool
 	DelayThreshold time.Duration
@@ -75,6 +78,7 @@ type satelliteStream struct {
 	isDebug        bool
 	isVerbose      bool
 	showStats      bool
+	telemetryFile  *os.File
 	acceptedPlanId []string
 
 	correctOrder   bool
@@ -95,6 +99,7 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		isDebug:            o.IsDebug,
 		isVerbose:          o.IsVerbose,
 		showStats:          o.ShowStats,
+		telemetryFile:      o.TelemetryFile,
 		acceptedPlanId:     o.AcceptedPlanId,
 
 		correctOrder:   o.CorrectOrder,
@@ -155,6 +160,12 @@ func (ss *satelliteStream) recvLoop() {
 	// Initialize exponential back off settings.
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
+
+	// file writer for telemetry data
+	var telemetryFileWriter io.Writer
+	if ss.telemetryFile != nil {
+		telemetryFileWriter = bufio.NewWriter(ss.telemetryFile)
+	}
 	telemetryMessageAckId := ""
 
 	pq := collection.NewPriorityQueue((*stellarstation.Telemetry)(nil), func(i, j interface{}) bool {
@@ -267,6 +278,11 @@ func (ss *satelliteStream) recvLoop() {
 					}()
 				} else {
 					ss.recvChan <- payload
+					if telemetryFileWriter != nil {
+						if _, err := telemetryFileWriter.Write(payload); err != nil {
+							panic(err)
+						}
+					}
 				}
 
 				// send ack & update telemetryMessageAckId in case we need to resume from disconnects
@@ -362,6 +378,9 @@ func (ss *satelliteStream) start() (func(), error) {
 	cleanup := func() {
 		if ss.showStats {
 			metrics.logReport()
+		}
+		if ss.telemetryFile != nil {
+			ss.telemetryFile.Close()
 		}
 	}
 	return cleanup, nil
