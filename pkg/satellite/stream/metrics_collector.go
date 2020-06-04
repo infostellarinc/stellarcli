@@ -51,7 +51,6 @@ type MetricsCollector struct {
 	frequency             float64
 	delayNanos            int64
 	statsLoggingScheduler bool
-	timeToLogStats        bool
 	writeLock             sync.Mutex
 
 	messageBuffer                 []telemetryWithTimestamp
@@ -354,23 +353,6 @@ func humanReadableNanoSeconds(delay int64) string {
 	return fmt.Sprintf("%.1f %s", nanos, ci[idx])
 }
 
-func (metrics *MetricsCollector) tryLogStats() {
-	if !metrics.timeToLogStats {
-		return
-	}
-	metrics.timeToLogStats = false
-	// check for expired samples
-	metrics.writeLock.Lock()
-	if len(metrics.messageBuffer) > 0 {
-		lastChunk := metrics.messageBuffer[len(metrics.messageBuffer)-1]
-		if lastChunk.ReceivedTime.Before(time.Now().Add(-time.Duration(InstantSampleSeconds) * time.Second)) {
-			metrics.messageBuffer = make([]telemetryWithTimestamp, 0)
-		}
-	}
-	metrics.writeLock.Unlock()
-	metrics.logStats()
-}
-
 // StartStatsEmitScheduler this should be ran in separate thread
 func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis int) {
 	metrics.statsLoggingScheduler = true
@@ -378,9 +360,17 @@ func (metrics *MetricsCollector) startStatsEmitSchedulerWorker(emitRateMillis in
 	for {
 		<-uptimeTicker.C
 		if metrics.statsLoggingScheduler {
-			metrics.timeToLogStats = true
+			// check for expired samples
+			metrics.writeLock.Lock()
+			if len(metrics.messageBuffer) > 0 {
+				lastChunk := metrics.messageBuffer[len(metrics.messageBuffer)-1]
+				if lastChunk.ReceivedTime.Before(time.Now().Add(-time.Duration(InstantSampleSeconds) * time.Second)) {
+					metrics.messageBuffer = make([]telemetryWithTimestamp, 0)
+				}
+			}
+			metrics.writeLock.Unlock()
+			metrics.logStats()
 		} else {
-			metrics.timeToLogStats = false
 			// stop scheduler
 			return
 		}
