@@ -28,7 +28,7 @@ type WriteFileFlag struct {
 
 // Add a flag to the command.
 func (f *WriteFileFlag) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&f.FileName, "output-file", "o", "", "[Alpha feature] The file to to write packets to. Creates file if it does not exist; appends file if it exists. (default none)")
+	cmd.Flags().StringVarP(&f.FileName, "output-file", "o", "", "[Alpha feature] The file to write packets to. Creates file if it does not exist; appends file if it exists. (default none)")
 }
 
 // Validate flag values.
