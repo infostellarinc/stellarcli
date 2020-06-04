@@ -134,6 +134,23 @@ func (ss *satelliteStream) Close() error {
 	return nil
 }
 
+// send telemetryMessageAckId to support enableFlowControl feature
+func (ss *satelliteStream) ackReceivedTelemetry(telemetryMessageAckId string) {
+	if telemetryMessageAckId != "" {
+		req := stellarstation.SatelliteStreamRequest{
+			SatelliteId: ss.satelliteId,
+			Request: &stellarstation.SatelliteStreamRequest_TelemetryReceivedAck{
+				TelemetryReceivedAck: &stellarstation.ReceiveTelemetryAck{
+					MessageAckId:      telemetryMessageAckId,
+					ReceivedTimestamp: timestampNow(),
+				},
+			},
+		}
+		log.Debug("sending ack index: %v", telemetryMessageAckId)
+		ss.stream.Send(&req)
+	}
+}
+
 func (ss *satelliteStream) recvLoop() {
 	// Initialize exponential back off settings.
 	b := backoff.NewExponentialBackOff()
@@ -251,21 +268,10 @@ func (ss *satelliteStream) recvLoop() {
 				} else {
 					ss.recvChan <- payload
 				}
-				// send ack & update index
+
+				// send ack & update telemetryMessageAckId incase we need to resume from disconnects
 				telemetryMessageAckId = telResponse.MessageAckId
-				if telemetryMessageAckId != "" {
-					req := stellarstation.SatelliteStreamRequest{
-						SatelliteId: ss.satelliteId,
-						Request: &stellarstation.SatelliteStreamRequest_TelemetryReceivedAck{
-							TelemetryReceivedAck: &stellarstation.ReceiveTelemetryAck{
-								MessageAckId:      telemetryMessageAckId,
-								ReceivedTimestamp: timestampNow(),
-							},
-						},
-					}
-					log.Debug("sending ack index: %v", telemetryMessageAckId)
-					ss.stream.Send(&req)
-				}
+				ss.ackReceivedTelemetry(telResponse.MessageAckId)
 			}
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
 			if res.GetStreamEvent() == nil || res.GetStreamEvent().GetPlanMonitoringEvent() == nil {
