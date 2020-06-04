@@ -98,8 +98,7 @@ func Fatal(v ...interface{}) {
 func Verbose(format string, v ...interface{}) {
 	if isVerbose {
 		lineCheck()
-		fmt.Printf("%s ", time.Now().Format("2006/01/02 15:04:05"))
-		fmt.Printf(format, v...)
+		log.Printf(format, v...)
 	}
 }
 
