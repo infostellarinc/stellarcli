@@ -23,7 +23,7 @@ stellar satellite open-stream [satellite-id] [flags]
   -h, --help                       help for open-stream
       --listen-host string         Deprecated: use udp-listen-host instead.
       --listen-port uint16         Deprecated: use udp-listen-port instead.
-  -o, --output-file string         [Alpha feature] The file to write packets to. Creates file if it does not exist; appends file if it exists. (default none)
+      --output-file string         [Alpha feature] The file to write packets to. Creates file if it does not exist; appends to file if it already exists. (default none)
       --proxy string               Proxy protocol. One of: udp|tcp (default "udp")
       --send-host string           Deprecated: use udp-send-host instead.
       --send-port uint16           Deprecated: use udp-send-port instead.
