@@ -74,6 +74,8 @@ type satelliteStream struct {
 	recvChan           chan<- []byte
 	recvLoopClosedChan chan struct{}
 
+	telemetryFileWriter *bufio.Writer
+
 	state          uint32
 	isDebug        bool
 	isVerbose      bool
@@ -136,6 +138,21 @@ func (ss *satelliteStream) Close() error {
 
 	<-ss.recvLoopClosedChan
 
+	ss.CloseFileWriter()
+
+	return nil
+}
+
+func (ss *satelliteStream) CloseFileWriter() error {
+	if ss.telemetryFileWriter != nil {
+		ss.telemetryFileWriter.Flush()
+		ss.telemetryFileWriter = nil
+	}
+	if ss.telemetryFile != nil {
+		err := ss.telemetryFile.Close()
+		ss.telemetryFile = nil
+		return err
+	}
 	return nil
 }
 
@@ -162,9 +179,8 @@ func (ss *satelliteStream) recvLoop() {
 	b.MaxElapsedTime = MaxElapsedTime
 
 	// file writer for telemetry data
-	var telemetryFileWriter *bufio.Writer
 	if ss.telemetryFile != nil {
-		telemetryFileWriter = bufio.NewWriter(ss.telemetryFile)
+		ss.telemetryFileWriter = bufio.NewWriter(ss.telemetryFile)
 	}
 	telemetryMessageAckId := ""
 
@@ -198,12 +214,11 @@ func (ss *satelliteStream) recvLoop() {
 		for i := 0; i < numFlush; i++ {
 			telemetry := pq.Pop().(*stellarstation.Telemetry)
 			ss.recvChan <- telemetry.Data
-			if telemetryFileWriter != nil {
-				if _, err := telemetryFileWriter.Write(telemetry.Data); err != nil {
+			if ss.telemetryFileWriter != nil {
+				if _, err := ss.telemetryFileWriter.Write(telemetry.Data); err != nil {
 					panic(err)
 				}
 			}
-			telemetryFileWriter.Flush()
 		}
 		ss.flushTimer.Reset(ss.delayThreshold)
 	})
@@ -284,12 +299,11 @@ func (ss *satelliteStream) recvLoop() {
 					}()
 				} else {
 					ss.recvChan <- payload
-					if telemetryFileWriter != nil {
-						if _, err := telemetryFileWriter.Write(payload); err != nil {
+					if ss.telemetryFileWriter != nil {
+						if _, err := ss.telemetryFileWriter.Write(payload); err != nil {
 							panic(err)
 						}
 					}
-					telemetryFileWriter.Flush()
 				}
 
 				// send ack & update telemetryMessageAckId in case we need to resume from disconnects
@@ -386,9 +400,7 @@ func (ss *satelliteStream) start() (func(), error) {
 		if ss.showStats {
 			metrics.logReport()
 		}
-		if ss.telemetryFile != nil {
-			ss.telemetryFile.Close()
-		}
+		ss.CloseFileWriter()
 	}
 	return cleanup, nil
 }
