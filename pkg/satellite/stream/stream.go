@@ -162,7 +162,7 @@ func (ss *satelliteStream) recvLoop() {
 	b.MaxElapsedTime = MaxElapsedTime
 
 	// file writer for telemetry data
-	var telemetryFileWriter io.Writer
+	var telemetryFileWriter *bufio.Writer
 	if ss.telemetryFile != nil {
 		telemetryFileWriter = bufio.NewWriter(ss.telemetryFile)
 	}
@@ -198,6 +198,12 @@ func (ss *satelliteStream) recvLoop() {
 		for i := 0; i < numFlush; i++ {
 			telemetry := pq.Pop().(*stellarstation.Telemetry)
 			ss.recvChan <- telemetry.Data
+			if telemetryFileWriter != nil {
+				if _, err := telemetryFileWriter.Write(telemetry.Data); err != nil {
+					panic(err)
+				}
+			}
+			telemetryFileWriter.Flush()
 		}
 		ss.flushTimer.Reset(ss.delayThreshold)
 	})
@@ -283,6 +289,7 @@ func (ss *satelliteStream) recvLoop() {
 							panic(err)
 						}
 					}
+					telemetryFileWriter.Flush()
 				}
 
 				// send ack & update telemetryMessageAckId in case we need to resume from disconnects
