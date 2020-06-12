@@ -47,5 +47,7 @@ func Dial() (*grpc.ClientConn, error) {
 	return grpc.Dial(
 		apiUrl,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithPerRPCCredentials(creds))
+		grpc.WithPerRPCCredentials(creds),
+		// Set receive size to a somewhat safe 9MiB.
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(9437000)))
 }
