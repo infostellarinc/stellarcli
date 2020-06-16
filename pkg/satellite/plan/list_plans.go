@@ -44,7 +44,6 @@ var listPlansVerboseTemplate = []printer.TemplateItem{
 	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
 	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
 	{"UNIT_PRICE", "unitPrice"},
-	{"TELEMETRY_METADATA", "telemetryMetadata"},
 }
 
 var listPlansTemplate = []printer.TemplateItem{
