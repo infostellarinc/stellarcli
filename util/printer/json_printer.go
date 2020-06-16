@@ -50,6 +50,8 @@ func (p *JSONPrinter) Write(r []interface{}) {
 }
 
 // Write fields with the template.
+// Prefer use of json encode then indent over marshalIndent to prevent HTML escaping,
+// which causes invalid URLs to be printed.
 func (p *JSONPrinter) WriteWithTemplate(r []map[string]interface{}, t []TemplateItem) {
 	encBuffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(encBuffer)
