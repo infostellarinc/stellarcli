@@ -138,6 +138,16 @@ func ListPlans(o *ListOptions) {
 			uplink["bitrate"] = channelSet.Uplink.Bitrate
 		}
 
+		var telemetryMetadata []map[string]interface{}
+		if len(plan.TelemetryMetadata) > 0 {
+			for _, metadata := range plan.TelemetryMetadata {
+				data := make(map[string]interface{})
+				data["url"] = metadata.Url
+				data["dataType"] = metadata.DataType
+				telemetryMetadata = append(telemetryMetadata, data)
+			}
+		}
+
 		obj := map[string]interface{}{
 			"id":          plan.Id,
 			"satelliteId": plan.SatelliteId,
@@ -160,6 +170,7 @@ func ListPlans(o *ListOptions) {
 			"unitPrice":          plan.UnitPrice,
 			"maxElevationDegree": plan.MaxElevationDegrees,
 			"maxElevationTime":   maxElevationTime,
+			"telemetryMetadata":  telemetryMetadata,
 		}
 		results = append(results, obj)
 	}

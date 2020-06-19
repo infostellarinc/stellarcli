@@ -52,7 +52,7 @@ func NewListAvailablePassesCommand() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			p := outputFormatFlags.ToPrinter()
+			p := outputFormatFlags.ToPrinter(verboseFlag.IsVerbose)
 			o := &pass.ListAvailablePassesOptions{
 				Printer:      p,
 				ID:           args[0],
