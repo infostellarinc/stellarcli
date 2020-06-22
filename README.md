@@ -30,6 +30,14 @@ All commands after that will be authenticated using that key.
 
 [Documentation](/docs/stellar.md) page describes more detail of stellar commands.
 
+## Testing
+
+When testing the CLI against the [StellarStation API Fakeserver](https://github.com/infostellarinc/stellarstation-api/tree/master/examples/fakeserver), you may change the server endpoint by setting the `STELLARSTATION_API_URL` environment variable, eg:
+
+```bash
+$ export STELLARSTATION_API_URL=localhost:8080
+```
+
 ## Developing
 
 The utility requires either Java or Go 1.13. When using Java with Gradle, Go is automatically
