@@ -261,7 +261,7 @@ func (ss *satelliteStream) recvLoop() {
 			continue
 		}
 		if ss.streamId != res.StreamId {
-			log.Verbose("streamId: %v\n", res.StreamId)
+			log.Println("streamId: %v\n", res.StreamId)
 		}
 		ss.streamId = res.StreamId
 		if ss.showStats {
