@@ -305,11 +305,10 @@ func (ss *satelliteStream) recvLoop() {
 						}
 					}
 				}
-
-				// send ack & update telemetryMessageAckId in case we need to resume from disconnects
-				telemetryMessageAckId = telResponse.MessageAckId
-				ss.ackReceivedTelemetry(telResponse.MessageAckId)
 			}
+			// send ack & update telemetryMessageAckId in case we need to resume from disconnects
+			telemetryMessageAckId = telResponse.MessageAckId
+			ss.ackReceivedTelemetry(telResponse.MessageAckId)
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
 			if res.GetStreamEvent() == nil || res.GetStreamEvent().GetPlanMonitoringEvent() == nil {
 				break
