@@ -253,7 +253,8 @@ func (ss *satelliteStream) recvLoop() {
 				})
 			if rcErr != nil {
 				// Couldn't reconnect to the server, bailout.
-				log.Fatalf("error connecting to API stream: %v\n", err)
+				log.Printf("error connecting to API stream: %v\n", err)
+				return
 			}
 			log.Println("connected to the API stream.")
 		}
