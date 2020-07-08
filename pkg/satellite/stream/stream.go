@@ -252,6 +252,9 @@ func (ss *satelliteStream) recvLoop() {
 					log.Printf("%s. Automatically retrying in %v", e, duration)
 				})
 			if rcErr != nil {
+				// This explicit cleanup is not the best solution and should be moved to a global
+				// (or higher-level) cleanup function.
+				ss.CloseFileWriter()
 				// Couldn't reconnect to the server, bailout.
 				log.Fatalf("error connecting to API stream: %v\n", err)
 			}
