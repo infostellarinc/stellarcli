@@ -199,6 +199,13 @@ func duration(start, end *timestamp.Timestamp) string {
 	return fmt.Sprintf("%s", toTime(end).Sub(*toTime(start)))
 }
 
+func seconds(start, end *timestamp.Timestamp) string {
+	if start == nil || end == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.3f", toTime(end).Sub(*toTime(start)).Seconds())
+}
+
 func (metrics *MetricsCollector) logReport() {
 	if metrics.totalMessagesReceived > 0 {
 		// Dont use metrics.logger because it might be in overwrite mode
@@ -221,7 +228,9 @@ func (metrics *MetricsCollector) logReport() {
 		logger("  Total chunks          : %d\n", metrics.totalMessagesReceived)
 		logger("  Average rate (bits/s) : %sbps\n", humanReadableCountSI(metrics.avgRate()))
 		logger("  Average delay         : %s\n", humanReadableNanoSeconds(metrics.avgDelay()))
-		logger("  Transfer duration     : %s after datatake first byte timestamp\n", duration(metrics.starpassTimeFirstByteReceived, metrics.localTimeLastByteReceived))
+		logger("\n")
+		logger("              Datatake start time (UTC)    Transfer duration (s)    Average rate (bits/s)\n")
+		logger("  Summary:    %s         %21v    %21v\n", formatTimestampUTC(metrics.starpassTimeFirstByteReceived), seconds(metrics.starpassTimeFirstByteReceived, metrics.localTimeLastByteReceived), humanReadableCountSI(metrics.avgRate()))
 		logger("\n\n")
 	}
 }
