@@ -221,6 +221,7 @@ func (metrics *MetricsCollector) logReport() {
 		logger("  Total chunks          : %d\n", metrics.totalMessagesReceived)
 		logger("  Average rate (bits/s) : %sbps\n", humanReadableCountSI(metrics.avgRate()))
 		logger("  Average delay         : %s\n", humanReadableNanoSeconds(metrics.avgDelay()))
+		logger("  Transfer duration     : %s after datatake first byte timestamp\n", duration(metrics.starpassTimeFirstByteReceived, metrics.localTimeLastByteReceived))
 		logger("\n\n")
 	}
 }
