@@ -17,15 +17,32 @@ package flag
 
 import (
 	"github.com/spf13/cobra"
+	"time"
+)
+
+var (
+	defaultEnableAutoClose = false
+	defaultAutoCloseDelay  = 5 * time.Second
+	defaultAutoCloseTIme   = ""
 )
 
 type OpenStreamFlag struct {
-	StreamId string
+	EnableAutoClose bool
+	AutoCloseDelay  time.Duration
+	AutoCloseTime   string
+	StreamId        string
 }
 
 // Add a flag to the command.
 func (f *OpenStreamFlag) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.StreamId, "stream-id", "r", "", "The StreamId to resume.")
+	cmd.Flags().BoolVarP(&f.EnableAutoClose, "enable-auto-close", "", defaultEnableAutoClose,
+		"When set to true, the stream will close after a specified auto close time.")
+	cmd.Flags().DurationVarP(&f.AutoCloseDelay, "auto-close-delay", "", defaultAutoCloseDelay,
+		"The time in seconds after which to end the stream if auto close is enabled.")
+	cmd.Flags().StringVarP(&f.AutoCloseTime, "auto-close-time", "", defaultAutoCloseTIme,
+		"The time after which the stream will close if no more data received plus auto close delay.")
+
 }
 
 // Validate flag values.

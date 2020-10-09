@@ -17,6 +17,7 @@ package stream
 import (
 	"bufio"
 	"context"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"io"
 	"os"
 	"sync"
@@ -55,6 +56,10 @@ type SatelliteStreamOptions struct {
 
 	CorrectOrder   bool
 	DelayThreshold time.Duration
+
+	EnableAutoClose bool
+	AutoCloseDelay  time.Duration
+	AutoCloseTime   time.Time
 }
 
 type SatelliteStream interface {
@@ -87,6 +92,11 @@ type satelliteStream struct {
 	delayThreshold time.Duration
 	flushTimer     *time.Timer
 	mu             sync.Mutex
+
+	enableAutoClose bool
+	autoCloseDelay  time.Duration
+	autoCloseTime   time.Time
+	autoCloseTimer  *time.Timer
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
@@ -106,6 +116,10 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 
 		correctOrder:   o.CorrectOrder,
 		delayThreshold: o.DelayThreshold,
+
+		enableAutoClose: o.EnableAutoClose,
+		autoCloseDelay:  o.AutoCloseDelay,
+		autoCloseTime:   o.AutoCloseTime,
 	}
 
 	cleanup, err := s.start()
@@ -177,6 +191,10 @@ func (ss *satelliteStream) recvLoop() {
 	// Initialize exponential back off settings.
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
+
+	// Initialize timestamp of latest byte received
+	var timestampLastByteReceived *timestamp.Timestamp
+	receivingBytes := false
 
 	// file writer for telemetry data
 	if ss.telemetryFile != nil {
@@ -271,6 +289,21 @@ func (ss *satelliteStream) recvLoop() {
 			metrics.setStreamId(ss.streamId)
 		}
 
+		latestByteTime, _ := ptypes.Timestamp(timestampLastByteReceived)
+		if ss.enableAutoClose && ss.autoCloseTime.Sub(latestByteTime) < 1*time.Second && receivingBytes {
+			// Reset the auto close stream timer if still receiving bytes
+			if ss.autoCloseTimer != nil {
+				ss.autoCloseTimer.Reset(time.Second * ss.autoCloseDelay)
+			} else {
+				// Create the timer
+				ss.autoCloseTimer = time.AfterFunc(time.Second*ss.autoCloseDelay, func() {
+					// Stream ending detected. So shut down the loop.
+					close(ss.recvLoopClosedChan)
+					return
+				})
+			}
+		}
+		receivingBytes = false
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			telResponse := res.GetReceiveTelemetryResponse()
@@ -291,6 +324,10 @@ func (ss *satelliteStream) recvLoop() {
 				}
 				payload := telemetry.Data
 				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+				if ss.enableAutoClose {
+					timestampLastByteReceived = telemetry.TimeLastByteReceived
+					receivingBytes = true
+				}
 				if ss.showStats {
 					metrics.collectTelemetry(telemetry)
 				}
@@ -403,6 +440,9 @@ func (ss *satelliteStream) start() (func(), error) {
 			metrics.logReport()
 		}
 		ss.CloseFileWriter()
+		if ss.autoCloseTimer != nil {
+			ss.autoCloseTimer.Stop()
+		}
 	}
 	return cleanup, nil
 }

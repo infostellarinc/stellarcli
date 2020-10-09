@@ -16,11 +16,11 @@ package satellite
 
 import (
 	"fmt"
+	"github.com/spf13/cobra"
 	"log"
 	"os"
 	"os/signal"
-
-	"github.com/spf13/cobra"
+	"time"
 
 	"github.com/infostellarinc/stellarcli/cmd/flag"
 	"github.com/infostellarinc/stellarcli/cmd/util"
@@ -61,13 +61,17 @@ func NewOpenStreamCommand() *cobra.Command {
 			if err := flags.ValidateAll(); err != nil {
 				return err
 			}
-
+			_, err := time.Parse("20201001Z102001", openStreamFlag.AutoCloseTime)
+			if err != nil {
+				return err
+			}
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			proxy := proxyFlags.ToProxy()
 			defer proxy.Close()
 
+			autoCloseTime, _ := time.Parse("20201001Z102001", openStreamFlag.AutoCloseTime)
 			o := &stream.SatelliteStreamOptions{
 				SatelliteID:     args[0],
 				AcceptedFraming: framingFlags.ToProtoAcceptedFraming(),
@@ -80,6 +84,10 @@ func NewOpenStreamCommand() *cobra.Command {
 
 				CorrectOrder:   correctOrderFlags.CorrectOrder,
 				DelayThreshold: correctOrderFlags.DelayThreshold,
+
+				EnableAutoClose: openStreamFlag.EnableAutoClose,
+				AutoCloseDelay:  openStreamFlag.AutoCloseDelay,
+				AutoCloseTime:   autoCloseTime,
 			}
 
 			c := make(chan os.Signal)
