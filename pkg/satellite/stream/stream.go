@@ -95,7 +95,6 @@ type satelliteStream struct {
 	enableAutoClose bool
 	autoCloseDelay  time.Duration
 	autoCloseTime   time.Time
-	autoCloseTimer  *time.Timer
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
@@ -439,9 +438,6 @@ func (ss *satelliteStream) start() (func(), error) {
 			metrics.logReport()
 		}
 		ss.CloseFileWriter()
-		if ss.autoCloseTimer != nil {
-			ss.autoCloseTimer.Stop()
-		}
 	}
 	return cleanup, nil
 }
