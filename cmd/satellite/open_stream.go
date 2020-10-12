@@ -61,7 +61,7 @@ func NewOpenStreamCommand() *cobra.Command {
 			if err := flags.ValidateAll(); err != nil {
 				return err
 			}
-			_, err := time.Parse("20201001Z102001", openStreamFlag.AutoCloseTime)
+			_, err := time.Parse("2006-01-02'T'15:04:05Z", openStreamFlag.AutoCloseTime)
 			if err != nil {
 				return err
 			}
@@ -71,7 +71,7 @@ func NewOpenStreamCommand() *cobra.Command {
 			proxy := proxyFlags.ToProxy()
 			defer proxy.Close()
 
-			autoCloseTime, _ := time.Parse("20201001Z102001", openStreamFlag.AutoCloseTime)
+			autoCloseTime, _ := time.Parse("2006-01-02'T'15:04:05Z", openStreamFlag.AutoCloseTime)
 			o := &stream.SatelliteStreamOptions{
 				SatelliteID:     args[0],
 				AcceptedFraming: framingFlags.ToProtoAcceptedFraming(),

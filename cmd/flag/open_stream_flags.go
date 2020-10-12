@@ -23,7 +23,7 @@ import (
 var (
 	defaultEnableAutoClose = false
 	defaultAutoCloseDelay  = 5 * time.Second
-	defaultAutoCloseTIme   = ""
+	defaultAutoCloseTIme   = "2006-01-02'T'15:04:05Z"
 )
 
 type OpenStreamFlag struct {

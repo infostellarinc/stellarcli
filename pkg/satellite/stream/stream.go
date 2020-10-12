@@ -295,8 +295,8 @@ func (ss *satelliteStream) recvLoop() {
 
 		select {
 		case <-ctx.Done():
-			// Close stream if auto close detects end of data
-			if ss.enableAutoClose && ss.autoCloseTime.Sub(latestByteTime) < 1*time.Second && !receivingBytes {
+			// Close stream if end of data and the current time is after auto close time
+			if ss.enableAutoClose && time.Now().UTC().After(ss.autoCloseTime) && !receivingBytes {
 				close(ss.recvLoopClosedChan)
 				return
 			} else {
