@@ -17,7 +17,6 @@ package stream
 import (
 	"bufio"
 	"context"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"io"
 	"os"
 	"sync"
@@ -193,9 +192,7 @@ func (ss *satelliteStream) recvLoop() {
 	b.MaxElapsedTime = MaxElapsedTime
 
 	// Initialize auto close
-	var timestampLastByteReceived *timestamp.Timestamp
 	receivingBytes := false
-	latestByteTime, _ := ptypes.Timestamp(timestampLastByteReceived)
 	d := time.Now().Add(time.Second * ss.autoCloseDelay)
 	ctx, cancel := context.WithDeadline(context.Background(), d)
 	defer cancel()
@@ -328,7 +325,6 @@ func (ss *satelliteStream) recvLoop() {
 				payload := telemetry.Data
 				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
 				if ss.enableAutoClose {
-					timestampLastByteReceived = telemetry.TimeLastByteReceived
 					receivingBytes = true
 				}
 				if ss.showStats {
