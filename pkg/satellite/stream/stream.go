@@ -17,6 +17,7 @@ package stream
 import (
 	"bufio"
 	"context"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"io"
 	"os"
 	"sync"
@@ -192,9 +193,17 @@ func (ss *satelliteStream) recvLoop() {
 
 	// Initialize auto close
 	receivingBytes := false
-	d := time.Now().Add(time.Second * ss.autoCloseDelay)
-	ctx, cancel := context.WithDeadline(context.Background(), d)
-	defer cancel()
+	var timestampLastByteReceived *timestamp.Timestamp
+	autoCloseTimer := func() *time.Timer {
+		timer := time.AfterFunc(time.Second*ss.autoCloseDelay, func() {
+			// Timer reached the end of the delay period
+			close(ss.recvLoopClosedChan)
+			return
+		})
+		return timer
+	}()
+	defer autoCloseTimer.Stop()
+	autoCloseTimer.Stop()
 
 	// file writer for telemetry data
 	if ss.telemetryFile != nil {
@@ -289,18 +298,11 @@ func (ss *satelliteStream) recvLoop() {
 			metrics.setStreamId(ss.streamId)
 		}
 
-		select {
-		case <-ctx.Done():
-			// Close stream if end of data and the current time is after auto close time
-			if ss.enableAutoClose && time.Now().UTC().After(ss.autoCloseTime) && !receivingBytes {
-				close(ss.recvLoopClosedChan)
-				return
-			} else {
-				// Renew the deadline and check again after it expires
-				d := time.Now().Add(time.Second * ss.autoCloseDelay)
-				ctx, cancel = context.WithDeadline(context.Background(), d)
-			}
+		latestByteTime, _ := ptypes.Timestamp(timestampLastByteReceived)
+		if ss.enableAutoClose && ss.autoCloseTime.Sub(latestByteTime) < 1*time.Second && receivingBytes {
+			autoCloseTimer.Reset(time.Second * ss.autoCloseDelay)
 		}
+
 		receivingBytes = false
 
 		switch res.Response.(type) {
@@ -325,6 +327,7 @@ func (ss *satelliteStream) recvLoop() {
 				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
 				if ss.enableAutoClose {
 					receivingBytes = true
+					timestampLastByteReceived = telemetry.TimeLastByteReceived
 				}
 				if ss.showStats {
 					metrics.collectTelemetry(telemetry)
