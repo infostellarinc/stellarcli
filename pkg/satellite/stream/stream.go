@@ -196,7 +196,7 @@ func (ss *satelliteStream) recvLoop() {
 	var timestampLastByteReceived *timestamp.Timestamp
 	receivingBytes := false
 	latestByteTime, _ := ptypes.Timestamp(timestampLastByteReceived)
-	d := time.Now().Add(time.Second*ss.autoCloseDelay)
+	d := time.Now().Add(time.Second * ss.autoCloseDelay)
 	ctx, cancel := context.WithDeadline(context.Background(), d)
 	defer cancel()
 
@@ -301,7 +301,7 @@ func (ss *satelliteStream) recvLoop() {
 				return
 			} else {
 				// Renew the deadline and check again after it expires
-				d := time.Now().Add(time.Second*ss.autoCloseDelay)
+				d := time.Now().Add(time.Second * ss.autoCloseDelay)
 				ctx, cancel = context.WithDeadline(context.Background(), d)
 			}
 		}
