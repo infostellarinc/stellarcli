@@ -192,9 +192,13 @@ func (ss *satelliteStream) recvLoop() {
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
 
-	// Initialize timestamp of latest byte received
+	// Initialize auto close
 	var timestampLastByteReceived *timestamp.Timestamp
 	receivingBytes := false
+	latestByteTime, _ := ptypes.Timestamp(timestampLastByteReceived)
+	d := time.Now().Add(time.Second*ss.autoCloseDelay)
+	ctx, cancel := context.WithDeadline(context.Background(), d)
+	defer cancel()
 
 	// file writer for telemetry data
 	if ss.telemetryFile != nil {
@@ -289,21 +293,20 @@ func (ss *satelliteStream) recvLoop() {
 			metrics.setStreamId(ss.streamId)
 		}
 
-		latestByteTime, _ := ptypes.Timestamp(timestampLastByteReceived)
-		if ss.enableAutoClose && ss.autoCloseTime.Sub(latestByteTime) < 1*time.Second && receivingBytes {
-			// Reset the auto close stream timer if still receiving bytes
-			if ss.autoCloseTimer != nil {
-				ss.autoCloseTimer.Reset(time.Second * ss.autoCloseDelay)
+		select {
+		case <-ctx.Done():
+			// Close stream if auto close detects end of data
+			if ss.enableAutoClose && ss.autoCloseTime.Sub(latestByteTime) < 1*time.Second && !receivingBytes {
+				close(ss.recvLoopClosedChan)
+				return
 			} else {
-				// Create the timer
-				ss.autoCloseTimer = time.AfterFunc(time.Second*ss.autoCloseDelay, func() {
-					// Stream ending detected. So shut down the loop.
-					close(ss.recvLoopClosedChan)
-					return
-				})
+				// Renew the deadline and check again after it expires
+				d := time.Now().Add(time.Second*ss.autoCloseDelay)
+				ctx, cancel = context.WithDeadline(context.Background(), d)
 			}
 		}
 		receivingBytes = false
+
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			telResponse := res.GetReceiveTelemetryResponse()
