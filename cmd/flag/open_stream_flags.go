@@ -23,7 +23,7 @@ import (
 var (
 	defaultEnableAutoClose = false
 	defaultAutoCloseDelay  = 5 * time.Second
-	defaultAutoCloseTIme   = "2006-01-02'T'15:04:05Z"
+	defaultAutoCloseTime   = "2006-01-02'T'15:04:05Z"
 )
 
 type OpenStreamFlag struct {
@@ -39,9 +39,9 @@ func (f *OpenStreamFlag) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&f.EnableAutoClose, "enable-auto-close", "", defaultEnableAutoClose,
 		"When set to true, the stream will close after a specified auto close time.")
 	cmd.Flags().DurationVarP(&f.AutoCloseDelay, "auto-close-delay", "", defaultAutoCloseDelay,
-		"The time in seconds after which to end the stream if auto close is enabled.")
-	cmd.Flags().StringVarP(&f.AutoCloseTime, "auto-close-time", "", defaultAutoCloseTIme,
-		"The time after which the stream will close if no more data received plus auto close delay.")
+		"The duration to wait before ending the stream with no more data incoming.")
+	cmd.Flags().StringVarP(&f.AutoCloseTime, "auto-close-time", "", defaultAutoCloseTime,
+		"The datetime after which auto-closing will be enabled.")
 
 }
 

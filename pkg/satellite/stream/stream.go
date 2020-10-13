@@ -195,7 +195,7 @@ func (ss *satelliteStream) recvLoop() {
 	receivingBytes := false
 	var timestampLastByteReceived *timestamp.Timestamp
 	autoCloseTimer := time.AfterFunc(ss.autoCloseDelay, func() {
-		// Timer reached the end of the delay period. Closing stream and exiting stellarCLI
+		// Timer reached the end of the delay period. Closing stream and exiting
 		ss.Close()
 		panic("Stream auto-close conditions met - exiting")
 	})
