@@ -196,8 +196,9 @@ func (ss *satelliteStream) recvLoop() {
 	var timestampLastByteReceived *timestamp.Timestamp
 	autoCloseTimer := time.AfterFunc(ss.autoCloseDelay, func() {
 		// Timer reached the end of the delay period. Closing stream and exiting
+		log.Printf("Stream auto-close conditions met - exiting")
 		ss.Close()
-		panic("Stream auto-close conditions met - exiting")
+		os.Exit(0)
 	})
 	defer autoCloseTimer.Stop()
 	autoCloseTimer.Stop()
