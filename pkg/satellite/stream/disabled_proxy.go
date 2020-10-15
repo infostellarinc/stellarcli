@@ -14,21 +14,9 @@
 
 package stream
 
-import (
-	"net"
-	"sync"
-)
-
 type noProxy struct {
-	recvConn      net.PacketConn
-	sendConn      net.Conn
-	recvCloseChan chan struct{}
-	sendCloseChan chan struct{}
-
 	stream     SatelliteStream
 	streamChan chan []byte
-
-	closeWg sync.WaitGroup
 }
 
 // Create a connection without using a proxy.
@@ -36,10 +24,7 @@ func NewConnectionWithoutProxy() (Proxy, error) {
 	streamChan := make(chan []byte)
 
 	p := &noProxy{
-		sendCloseChan: make(chan struct{}),
-		recvCloseChan: make(chan struct{}),
-		streamChan:    streamChan,
-		closeWg:       sync.WaitGroup{},
+		streamChan: streamChan,
 	}
 
 	return p, nil
