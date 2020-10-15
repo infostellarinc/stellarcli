@@ -30,7 +30,7 @@ var (
 	defaultProxyProtocol = "udp"
 
 	// Supported proxy.
-	availableProxy = []string{"udp", "tcp"}
+	availableProxy = []string{"udp", "tcp", "disabled"}
 	// Default listen host for UDP.
 	defaultUDPListenHost = "127.0.0.1"
 	// Default listen port for UDP.
@@ -119,6 +119,12 @@ func (f *ProxyFlags) ToProxy() stream.Proxy {
 		p, err := stream.NewTCPProxy(o)
 		if err != nil {
 			log.Fatalf("could not open TCP proxy: %v\n", err)
+		}
+		return p
+	case "disabled":
+		p, err := stream.NewConnectionWithoutProxy()
+		if err != nil {
+			log.Fatalf("could not open connection: %v\n", err)
 		}
 		return p
 	}
