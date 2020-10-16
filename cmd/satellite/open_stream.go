@@ -82,6 +82,10 @@ func NewOpenStreamCommand() *cobra.Command {
 				DelayThreshold: correctOrderFlags.DelayThreshold,
 			}
 
+			if proxyFlags.ProxyProtocol == "disabled" && writeFileFlag.FileName == "" {
+				log.Println("No proxy or output file set. Streamed data will be discarded")
+			}
+
 			c := make(chan os.Signal)
 			signal.Notify(c, os.Interrupt)
 			defer close(c)
