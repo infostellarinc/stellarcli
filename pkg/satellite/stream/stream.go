@@ -17,7 +17,6 @@ package stream
 import (
 	"bufio"
 	"context"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"io"
 	"os"
 	"sync"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"

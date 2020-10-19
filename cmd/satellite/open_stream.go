@@ -15,6 +15,7 @@
 package satellite
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"log"
@@ -61,17 +62,29 @@ func NewOpenStreamCommand() *cobra.Command {
 			if err := flags.ValidateAll(); err != nil {
 				return err
 			}
-			_, err := time.Parse("2006-01-02'T'15:04:05Z", openStreamFlag.AutoCloseTime)
-			if err != nil {
-				return err
+			if openStreamFlag.EnableAutoClose {
+				if openStreamFlag.AutoCloseTime == "" {
+					return errors.New("cannot enable auto close without providing an auto close time")
+				}
+				_, err := time.Parse("2006-01-02 15:04:05", openStreamFlag.AutoCloseTime)
+				if err != nil {
+					return errors.New("couldn't parse auto close time. Please use layout 2006-01-02 15:04:05")
+				}
+				if openStreamFlag.AutoCloseDelay < 0 * time.Second {
+					return errors.New("please provide a positive auto close delay duration")
+				}
+				if openStreamFlag.AutoCloseDelay > 10 * time.Minute {
+					return errors.New("please provide an auto close delay duration that is less than 10 minutes")
+				}
 			}
+
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			proxy := proxyFlags.ToProxy()
 			defer proxy.Close()
 
-			autoCloseTime, _ := time.Parse("2006-01-02'T'15:04:05Z", openStreamFlag.AutoCloseTime)
+			autoCloseTime, _ := time.Parse("2006-01-02 15:04:05", openStreamFlag.AutoCloseTime)
 			o := &stream.SatelliteStreamOptions{
 				SatelliteID:     args[0],
 				AcceptedFraming: framingFlags.ToProtoAcceptedFraming(),
