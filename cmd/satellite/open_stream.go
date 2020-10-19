@@ -70,11 +70,8 @@ func NewOpenStreamCommand() *cobra.Command {
 				if err != nil {
 					return errors.New("couldn't parse auto close time. Please use layout 2006-01-02 15:04:05")
 				}
-				if openStreamFlag.AutoCloseDelay < 0*time.Second {
-					return errors.New("please provide a positive auto close delay duration")
-				}
-				if openStreamFlag.AutoCloseDelay > 10*time.Minute {
-					return errors.New("please provide an auto close delay duration that is less than 10 minutes")
+				if openStreamFlag.AutoCloseDelay < 1*time.Second || openStreamFlag.AutoCloseDelay > 10*time.Minute {
+					return errors.New("please provide a duration between 1s and 10m")
 				}
 			}
 
