@@ -15,10 +15,10 @@ stellar satellite open-stream [satellite-id] [flags]
 ### Options
 
 ```
-      --accepted-framing strings    Framing type to receive. One of: IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM|AX25
+      --accepted-framing strings    Framing type to receive. One of: AX25|IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM
       --accepted-plan-id strings    Plan ID(s) to accept data from.
       --auto-close-delay duration   The duration to wait before ending the stream with no more data incoming. Valid time units are "s", "m". Ex 1m30s. Range 1s to 10m (default 5s)
-      --auto-close-time string      The datetime (in UTC) after which auto-closing will be enabled. Format 2006-01-02 15:04:05
+      --auto-close-time string      The datetime (UTC) after which auto-closing will be enabled. Format 2006-01-02 15:04:05
       --correct-order               When set to true, packets will be sorted by time_first_byte_received. This feature is alpha quality.
       --debug                       Output debug information. (default false)
       --delay-threshold duration    The maximum amount of time that packets remain in the sorting pool. (default 500ms)
