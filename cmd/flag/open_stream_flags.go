@@ -40,7 +40,7 @@ func (f *OpenStreamFlag) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVarP(&f.AutoCloseDelay, "auto-close-delay", "", defaultAutoCloseDelay,
 		"The duration to wait before ending the stream with no more data incoming. Valid time units are \"s\", \"m\". Ex 1m30s. Range 1s to 10m")
 	cmd.Flags().StringVarP(&f.AutoCloseTime, "auto-close-time", "", "",
-		"The datetime (in UTC) after which auto-closing will be enabled. Format 2006-01-02 15:04:05")
+		"The datetime (UTC) after which auto-closing will be enabled. Format 2006-01-02 15:04:05")
 }
 
 // Validate flag values.

@@ -17,7 +17,6 @@ package satellite
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
 	"os/signal"
@@ -26,6 +25,7 @@ import (
 	"github.com/infostellarinc/stellarcli/cmd/flag"
 	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/satellite/stream"
+	"github.com/spf13/cobra"
 )
 
 var (
