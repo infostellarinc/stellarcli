@@ -53,7 +53,7 @@ func (p *noProxy) serve() {
 	}
 }
 
-// Close the proxy.
+// Close the connection.
 func (p *noProxy) Close() error {
 	// Close the API stream.
 	close(p.streamChan)
