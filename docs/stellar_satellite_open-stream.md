@@ -15,7 +15,7 @@ stellar satellite open-stream [satellite-id] [flags]
 ### Options
 
 ```
-      --accepted-framing strings   Framing type to receive. One of: IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM|AX25
+      --accepted-framing strings   Framing type to receive. One of: BITSTREAM|AX25|IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL
       --accepted-plan-id strings   Plan ID(s) to accept data from.
       --correct-order              When set to true, packets will be sorted by time_first_byte_received. This feature is alpha quality.
       --debug                      Output debug information. (default false)
@@ -24,7 +24,7 @@ stellar satellite open-stream [satellite-id] [flags]
       --listen-host string         Deprecated: use udp-listen-host instead.
       --listen-port uint16         Deprecated: use udp-listen-port instead.
       --output-file string         [Alpha feature] The file to write packets to. Creates file if it does not exist; appends to file if it already exists. (default none)
-      --proxy string               Proxy protocol. One of: udp|tcp (default "udp")
+      --proxy string               Proxy protocol. One of: udp|tcp|disabled (default "udp")
       --send-host string           Deprecated: use udp-send-host instead.
       --send-port uint16           Deprecated: use udp-send-port instead.
       --stats                      [Alpha feature] Output telemetry stats information and generate pass summaries (default false)

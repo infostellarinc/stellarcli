@@ -60,6 +60,7 @@ type ProxyFlags struct {
 
 // Add flags to the command.
 func (f *ProxyFlags) AddFlags(cmd *cobra.Command) {
+	//currently defaults to UDP
 	cmd.Flags().StringVarP(&f.ProxyProtocol, "proxy", "", defaultProxyProtocol,
 		"Proxy protocol. One of: "+strings.Join(availableProxy, "|"))
 
