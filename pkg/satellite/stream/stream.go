@@ -78,7 +78,7 @@ type satelliteStream struct {
 	recvChan           chan<- []byte
 	recvLoopClosedChan chan struct{}
 
-	latestByteTime time.Time
+	latestByteTime  time.Time
 	closeTickerChan chan struct{}
 
 	telemetryFileWriter *bufio.Writer
@@ -214,7 +214,7 @@ func (ss *satelliteStream) recvLoop() {
 		go func() {
 			for {
 				select {
-				case <- ticker.C:
+				case <-ticker.C:
 					if ss.autoCloseTime.Sub(ss.latestByteTime) < 1*time.Second {
 						if receivingBytes {
 							// Past end of auto close time, but still receiving data
@@ -233,7 +233,7 @@ func (ss *satelliteStream) recvLoop() {
 							autoCloseTimer.Reset(ss.autoCloseTime.Sub(time.Now().UTC()) + ss.autoCloseDelay)
 						}
 					}
-				case <- ss.closeTickerChan:
+				case <-ss.closeTickerChan:
 					ticker.Stop()
 					return
 				}
