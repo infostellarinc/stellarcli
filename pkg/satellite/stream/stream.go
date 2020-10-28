@@ -220,12 +220,14 @@ func (ss *satelliteStream) recvLoop() {
 							// Past end of auto close time, but still receiving data
 							autoCloseTimer.Stop()
 							autoCloseTimer.Reset(ss.autoCloseDelay)
+							receivingBytes = false
 						}
 					} else { // Auto close time hasn't been reached yet
 						if dataStarted && receivingBytes {
 							// Data is being received
 							autoCloseTimer.Stop()
 							autoCloseTimer.Reset(ss.autoCloseTime.Sub(ss.latestByteTime) + ss.autoCloseDelay)
+							receivingBytes = false
 						}
 						if !dataStarted {
 							//No data yet during stream
@@ -334,8 +336,6 @@ func (ss *satelliteStream) recvLoop() {
 			metrics.setStreamId(ss.streamId)
 		}
 
-		receivingBytes = false
-
 		switch res.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
 			telResponse := res.GetReceiveTelemetryResponse()
@@ -356,7 +356,7 @@ func (ss *satelliteStream) recvLoop() {
 				}
 				payload := telemetry.Data
 				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
-				if ss.enableAutoClose {
+				if ss.enableAutoClose && len(payload) > 0{
 					dataStarted = true
 					receivingBytes = true
 					latestByteTime, _ := ptypes.Timestamp(telemetry.TimeLastByteReceived)
