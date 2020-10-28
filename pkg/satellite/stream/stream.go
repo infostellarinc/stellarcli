@@ -356,7 +356,7 @@ func (ss *satelliteStream) recvLoop() {
 				}
 				payload := telemetry.Data
 				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
-				if ss.enableAutoClose && len(payload) > 0{
+				if ss.enableAutoClose && len(payload) > 0 {
 					dataStarted = true
 					receivingBytes = true
 					latestByteTime, _ := ptypes.Timestamp(telemetry.TimeLastByteReceived)
