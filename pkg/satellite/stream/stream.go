@@ -233,7 +233,7 @@ func (ss *satelliteStream) recvLoop() {
 							receivingBytes = false
 						}
 						if !dataStarted {
-							//No data yet during stream
+							// No data yet during stream
 							autoCloseTimer.Stop()
 							autoCloseTimer.Reset(ss.autoCloseTime.Sub(time.Now().UTC()) + ss.autoCloseDelay)
 						}
