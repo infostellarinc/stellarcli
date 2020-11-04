@@ -55,6 +55,10 @@ type SatelliteStreamOptions struct {
 
 	CorrectOrder   bool
 	DelayThreshold time.Duration
+
+	EnableAutoClose bool
+	AutoCloseDelay  time.Duration
+	AutoCloseTime   time.Time
 }
 
 type SatelliteStream interface {
@@ -74,6 +78,9 @@ type satelliteStream struct {
 	recvChan           chan<- []byte
 	recvLoopClosedChan chan struct{}
 
+	latestByteTime  time.Time
+	closeTickerChan chan struct{}
+
 	telemetryFileWriter *bufio.Writer
 
 	state          uint32
@@ -87,6 +94,10 @@ type satelliteStream struct {
 	delayThreshold time.Duration
 	flushTimer     *time.Timer
 	mu             sync.Mutex
+
+	enableAutoClose bool
+	autoCloseDelay  time.Duration
+	autoCloseTime   time.Time
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
@@ -106,6 +117,11 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 
 		correctOrder:   o.CorrectOrder,
 		delayThreshold: o.DelayThreshold,
+
+		enableAutoClose: o.EnableAutoClose,
+		autoCloseDelay:  o.AutoCloseDelay,
+		autoCloseTime:   o.AutoCloseTime,
+		closeTickerChan: make(chan struct{}),
 	}
 
 	cleanup, err := s.start()
@@ -177,6 +193,58 @@ func (ss *satelliteStream) recvLoop() {
 	// Initialize exponential back off settings.
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
+
+	// Initialize stream auto close variables.
+	receivingBytes := false
+	dataStarted := false
+
+	if ss.enableAutoClose {
+		autoCloseTimer := time.AfterFunc(ss.autoCloseDelay, func() {
+			// Timer reached the end of the delay period. Closing stream and exiting
+			log.Printf("Stream auto-close conditions met - exiting")
+			if ss.showStats {
+				metrics.logReport()
+			}
+			close(ss.closeTickerChan)
+			ss.Close()
+			os.Exit(0)
+		})
+		defer autoCloseTimer.Stop()
+		autoCloseTimer.Stop()
+
+		ticker := time.NewTicker(1 * time.Second)
+
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					if ss.autoCloseTime.Sub(ss.latestByteTime) < 1*time.Second {
+						if receivingBytes {
+							// Past end of auto close time, but still receiving data
+							autoCloseTimer.Stop()
+							autoCloseTimer.Reset(ss.autoCloseDelay)
+							receivingBytes = false
+						}
+					} else { // Auto close time hasn't been reached yet
+						if dataStarted && receivingBytes {
+							// Data is being received
+							autoCloseTimer.Stop()
+							autoCloseTimer.Reset(ss.autoCloseTime.Sub(ss.latestByteTime) + ss.autoCloseDelay)
+							receivingBytes = false
+						}
+						if !dataStarted {
+							// No data yet during stream
+							autoCloseTimer.Stop()
+							autoCloseTimer.Reset(ss.autoCloseTime.Sub(time.Now().UTC()) + ss.autoCloseDelay)
+						}
+					}
+				case <-ss.closeTickerChan:
+					ticker.Stop()
+					return
+				}
+			}
+		}()
+	}
 
 	// file writer for telemetry data
 	if ss.telemetryFile != nil {
@@ -291,6 +359,12 @@ func (ss *satelliteStream) recvLoop() {
 				}
 				payload := telemetry.Data
 				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+				if ss.enableAutoClose && len(payload) > 0 {
+					dataStarted = true
+					receivingBytes = true
+					latestByteTime, _ := ptypes.Timestamp(telemetry.TimeLastByteReceived)
+					ss.latestByteTime = latestByteTime
+				}
 				if ss.showStats {
 					metrics.collectTelemetry(telemetry)
 				}
