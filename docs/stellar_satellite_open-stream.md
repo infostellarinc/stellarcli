@@ -15,7 +15,7 @@ stellar satellite open-stream [satellite-id] [flags]
 ### Options
 
 ```
-      --accepted-framing strings    Framing type to receive. One of: AX25|IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM
+      --accepted-framing strings    Framing type to receive. One of: WATERFALL|BITSTREAM|AX25|IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8
       --accepted-plan-id strings    Plan ID(s) to accept data from.
       --auto-close-delay duration   The duration to wait before ending the stream with no more data incoming. Valid time units are "s", "m". Ex 1m30s. Range 1s to 10m (default 5s)
       --auto-close-time string      The datetime (UTC) after which auto-closing will be enabled. Format 2006-01-02 15:04:05
@@ -27,7 +27,7 @@ stellar satellite open-stream [satellite-id] [flags]
       --listen-host string          Deprecated: use udp-listen-host instead.
       --listen-port uint16          Deprecated: use udp-listen-port instead.
       --output-file string          [Alpha feature] The file to write packets to. Creates file if it does not exist; appends to file if it already exists. (default none)
-      --proxy string                Proxy protocol. One of: udp|tcp (default "udp")
+      --proxy string                Proxy protocol. One of: udp|tcp|disabled (default "udp")
       --send-host string            Deprecated: use udp-send-host instead.
       --send-port uint16            Deprecated: use udp-send-port instead.
       --stats                       [Alpha feature] Output telemetry stats information and generate pass summaries (default false)
