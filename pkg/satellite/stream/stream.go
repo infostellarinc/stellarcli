@@ -197,6 +197,7 @@ func (ss *satelliteStream) recvLoop() {
 	// Initialize stream auto close variables.
 	receivingBytes := false
 	dataStarted := false
+	dataStopped := false
 
 	if ss.enableAutoClose {
 		autoCloseTimer := time.AfterFunc(ss.autoCloseDelay, func() {
@@ -214,29 +215,60 @@ func (ss *satelliteStream) recvLoop() {
 
 		ticker := time.NewTicker(1 * time.Second)
 
+		// File size = 2.3GB
+		// Transmission time @ 300Mbps = 1m3s
+		// auto-close-delay = 20s
+
+		// NO LATENCY
+		// 1 a) Set auto close time before data transmission stops (AOS + 20s) = OK
+		//      closed 20s after all data arrived
+		// 1 b) Set auto close time after data transmission stops (AOS + 3m) = OK
+		//      closed 20s after auto-close time
+		//
+		// LATENCY (max 200Mbps @ client, stream @ 300Mbps)
+		// 2 a) Set auto close time before data transmission stops (AOS + 20s) = OK
+		//      closed 20s after all data arrived
+		// 2 b) Set auto close time after data transmission stops, but before reception stop (AOS + 1m30s) = OK
+		//      closed 20s after all data arrived
+		// 2 c) Set auto close time after data reception stops (AOS + 3m) = OK
+		//      closed 20s after auto-close-time
+
 		go func() {
 			for {
 				select {
 				case <-ticker.C:
-					if ss.autoCloseTime.Sub(ss.latestByteTime) < 1*time.Second {
+					// Data has been received
+					if dataStarted {
+						// Still receiving data
 						if receivingBytes {
-							// Past end of auto close time, but still receiving data
+							// Message received was after last byte time
+							if ss.autoCloseTime.Sub(ss.latestByteTime) < 1*time.Second {
+								// Delay auto-close by auto-close-delay
+								log.Printf("Data received after auto-close-delay, extending delay: " + ss.autoCloseDelay.String())
+								autoCloseTimer.Stop()
+								autoCloseTimer.Reset(ss.autoCloseDelay)
+								receivingBytes = false
+							} else {
+								// Normal data received
+								// Delay auto-close to auto-close-time + auto-close-delay
+								log.Printf("Receiving, remaining delay: " + (ss.autoCloseTime.Sub(ss.latestByteTime) + ss.autoCloseDelay).String())
+								autoCloseTimer.Stop()
+								autoCloseTimer.Reset(ss.autoCloseTime.Sub(ss.latestByteTime) + ss.autoCloseDelay)
+								receivingBytes = false
+							}
+						} else if !receivingBytes && !dataStopped && ss.autoCloseTime.Sub(time.Now().UTC()) < 1*time.Second { // Not receiving data and system time is past auto close time
+							// Delay auto-close by auto-close-delay
+							log.Printf("Not receiving data and after auto-close-delay, waiting: " + ss.autoCloseDelay.String())
 							autoCloseTimer.Stop()
 							autoCloseTimer.Reset(ss.autoCloseDelay)
-							receivingBytes = false
+							dataStopped = true
 						}
-					} else { // Auto close time hasn't been reached yet
-						if dataStarted && receivingBytes {
-							// Data is being received
-							autoCloseTimer.Stop()
-							autoCloseTimer.Reset(ss.autoCloseTime.Sub(ss.latestByteTime) + ss.autoCloseDelay)
-							receivingBytes = false
-						}
-						if !dataStarted {
-							// No data yet during stream
-							autoCloseTimer.Stop()
-							autoCloseTimer.Reset(ss.autoCloseTime.Sub(time.Now().UTC()) + ss.autoCloseDelay)
-						}
+					} else {
+						// Data hasn't started yet, reset timer to auto-close-time + auto-close-delay
+						// The CLI will close if data does not arrive before the auto-close-time + auto-close-delay
+						log.Printf("Not started: " + (ss.autoCloseTime.Sub(time.Now().UTC()) + ss.autoCloseDelay).String())
+						autoCloseTimer.Stop()
+						autoCloseTimer.Reset(ss.autoCloseTime.Sub(time.Now().UTC()) + ss.autoCloseDelay)
 					}
 				case <-ss.closeTickerChan:
 					ticker.Stop()
@@ -361,6 +393,7 @@ func (ss *satelliteStream) recvLoop() {
 				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
 				if ss.enableAutoClose && len(payload) > 0 {
 					dataStarted = true
+					dataStopped = false
 					receivingBytes = true
 					latestByteTime, _ := ptypes.Timestamp(telemetry.TimeLastByteReceived)
 					ss.latestByteTime = latestByteTime
