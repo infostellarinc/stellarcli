@@ -20,12 +20,12 @@ import (
 )
 
 type PlanIdFlag struct {
-	AcceptedPlanId []string
+	PlanId string
 }
 
 // Add a flag to the command.
 func (f *PlanIdFlag) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringSliceVar(&f.AcceptedPlanId, "accepted-plan-id", nil, "Plan ID(s) to accept data from.")
+	cmd.Flags().StringVar(&f.PlanId, "plan-id", "", "Plan ID to stream data for.")
 }
 
 // Validate flag values.
