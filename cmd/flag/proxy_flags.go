@@ -27,7 +27,7 @@ import (
 
 var (
 	// Default proxy protocol.
-	defaultProxyProtocol = "udp"
+	defaultProxyProtocol = "disabled"
 
 	// Supported proxy.
 	availableProxy = []string{"udp", "tcp", "disabled"}
@@ -63,11 +63,6 @@ func (f *ProxyFlags) AddFlags(cmd *cobra.Command) {
 	// Currently defaults to UDP.
 	cmd.Flags().StringVarP(&f.ProxyProtocol, "proxy", "", defaultProxyProtocol,
 		"Proxy protocol. One of: "+strings.Join(availableProxy, "|"))
-
-	cmd.Flags().StringVar(&f.UDPListenHost, "listen-host", "", "Deprecated: use udp-listen-host instead.")
-	cmd.Flags().Uint16Var(&f.UDPListenPort, "listen-port", 0, "Deprecated: use udp-listen-port instead.")
-	cmd.Flags().StringVar(&f.UDPSendHost, "send-host", "", "Deprecated: use udp-send-host instead.")
-	cmd.Flags().Uint16Var(&f.UDPSendPort, "send-port", 0, "Deprecated: use udp-send-port instead.")
 
 	cmd.Flags().StringVar(&f.UDPListenHost, "udp-listen-host", defaultUDPListenHost,
 		"The host to listen for packets on.")
