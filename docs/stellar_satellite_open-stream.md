@@ -1,12 +1,13 @@
 ## stellar satellite open-stream
 
-Opens a proxy to stream packets to and from a satellite.
+Opens a stream to transfer packets to and from a satellite.
 
 ### Synopsis
 
-Opens a proxy to stream packets to and from a satellite. Both TCP and UDP are supported but
-TCP is preferred. Packets received by the proxy will be sent with the specified framing to
-the satellite and any incoming packets will be returned as is.
+Opens a stream to transfer packets to and from a satellite. TCP and UDP proxies are available
+for bidirectional communication in addition to local file writing for reception only. Packets received
+by the proxy will be sent with the specified framing to the satellite and any incoming packets will be
+returned as is.
 
 ```
 stellar satellite open-stream [satellite-id] [flags]
@@ -15,8 +16,7 @@ stellar satellite open-stream [satellite-id] [flags]
 ### Options
 
 ```
-      --accepted-framing strings    Framing type to receive. One of: WATERFALL|BITSTREAM|AX25|IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8
-      --accepted-plan-id strings    Plan ID(s) to accept data from.
+      --accepted-framing strings    Framing type to receive. One of: AX25|IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM
       --auto-close-delay duration   The duration to wait before ending the stream with no more data incoming. Valid time units are "s", "m". Ex 1m30s. Range 1s to 10m (default 5s)
       --auto-close-time string      The datetime (UTC) after which auto-closing will be enabled. Format 2006-01-02 15:04:05
       --correct-order               When set to true, packets will be sorted by time_first_byte_received. This feature is alpha quality.
@@ -27,6 +27,7 @@ stellar satellite open-stream [satellite-id] [flags]
       --listen-host string          Deprecated: use udp-listen-host instead.
       --listen-port uint16          Deprecated: use udp-listen-port instead.
       --output-file string          [Alpha feature] The file to write packets to. Creates file if it does not exist; appends to file if it already exists. (default none)
+      --plan-id string              Plan ID to stream data for.
       --proxy string                Proxy protocol. One of: udp|tcp|disabled (default "udp")
       --send-host string            Deprecated: use udp-send-host instead.
       --send-port uint16            Deprecated: use udp-send-port instead.
