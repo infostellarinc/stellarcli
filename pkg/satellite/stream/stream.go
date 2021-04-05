@@ -28,7 +28,6 @@ import (
 	"google.golang.org/grpc"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
-	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 	log "github.com/infostellarinc/stellarcli/pkg/logger"
 	"github.com/infostellarinc/stellarcli/pkg/util/collection"
@@ -45,9 +44,9 @@ var metrics MetricsCollector
 
 type SatelliteStreamOptions struct {
 	AcceptedFraming []stellarstation.Framing
-	AcceptedPlanId  []string
 	SatelliteID     string
 	StreamId        string
+	PlanId          string
 	IsDebug         bool
 	IsVerbose       bool
 	ShowStats       bool
@@ -74,6 +73,7 @@ type satelliteStream struct {
 	stream      stellarstation.StellarStationService_OpenSatelliteStreamClient
 	conn        *grpc.ClientConn
 	streamId    string
+	planId      string
 
 	recvChan           chan<- []byte
 	recvLoopClosedChan chan struct{}
@@ -83,12 +83,11 @@ type satelliteStream struct {
 
 	telemetryFileWriter *bufio.Writer
 
-	state          uint32
-	isDebug        bool
-	isVerbose      bool
-	showStats      bool
-	telemetryFile  *os.File
-	acceptedPlanId []string
+	state         uint32
+	isDebug       bool
+	isVerbose     bool
+	showStats     bool
+	telemetryFile *os.File
 
 	correctOrder   bool
 	delayThreshold time.Duration
@@ -106,6 +105,7 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		acceptedFraming:    o.AcceptedFraming,
 		satelliteId:        o.SatelliteID,
 		streamId:           o.StreamId,
+		planId:             o.PlanId,
 		recvChan:           recvChan,
 		state:              OPEN,
 		recvLoopClosedChan: make(chan struct{}),
@@ -113,7 +113,6 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		isVerbose:          o.IsVerbose,
 		showStats:          o.ShowStats,
 		telemetryFile:      o.TelemetryFile,
-		acceptedPlanId:     o.AcceptedPlanId,
 
 		correctOrder:   o.CorrectOrder,
 		delayThreshold: o.DelayThreshold,
@@ -359,9 +358,6 @@ func (ss *satelliteStream) recvLoop() {
 			if ss.showStats {
 				metrics.setPlanId(planId)
 			}
-			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
-				break
-			}
 
 			for _, telemetry := range telResponse.Telemetry {
 				if telemetry == nil {
@@ -394,7 +390,7 @@ func (ss *satelliteStream) recvLoop() {
 					}
 				}
 			}
-			// send ack & update telemetryMessageAckId in case we need to resume from disconnects
+			// Send ack & update telemetryMessageAckId in case we need to resume from disconnects
 			telemetryMessageAckId = telResponse.MessageAckId
 			ss.ackReceivedTelemetry(telResponse.MessageAckId)
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
@@ -404,9 +400,6 @@ func (ss *satelliteStream) recvLoop() {
 			streamEvent := res.GetStreamEvent()
 			monitoringEvent := streamEvent.GetPlanMonitoringEvent()
 			planId := monitoringEvent.PlanId
-			if len(ss.acceptedPlanId) != 0 && !util.Contains(ss.acceptedPlanId, planId) {
-				break
-			}
 
 			if ss.isVerbose {
 				if gsState := monitoringEvent.GetGroundStationState(); gsState != nil {
@@ -444,6 +437,10 @@ func (ss *satelliteStream) openStream(resumeStreamMessageAckId string) error {
 		StreamId:                 ss.streamId,
 		ResumeStreamMessageAckId: resumeStreamMessageAckId,
 		EnableFlowControl:        true,
+	}
+
+	if ss.planId != "" {
+		req.PlanId = ss.planId
 	}
 
 	err = stream.Send(&req)

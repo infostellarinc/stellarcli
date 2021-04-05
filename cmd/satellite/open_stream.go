@@ -30,11 +30,12 @@ import (
 
 var (
 	openStreamUse   = util.Normalize("open-stream [satellite-id]")
-	openStreamShort = util.Normalize("Opens a proxy to stream packets to and from a satellite.")
+	openStreamShort = util.Normalize("Opens a stream to transfer packets to and from a satellite.")
 	openStreamLong  = util.Normalize(
-		`Opens a proxy to stream packets to and from a satellite. Both TCP and UDP are supported but
-		TCP is preferred. Packets received by the proxy will be sent with the specified framing to
-		the satellite and any incoming packets will be returned as is.`)
+		`Opens a stream to transfer packets to and from a satellite. TCP and UDP proxies are available
+		for bidirectional communication in addition to local file writing for reception only. Packets received
+		by the proxy will be sent with the specified framing to the satellite and any incoming packets will be
+		returned as is.`)
 )
 
 // Create open-stream command.
@@ -85,8 +86,8 @@ func NewOpenStreamCommand() *cobra.Command {
 			o := &stream.SatelliteStreamOptions{
 				SatelliteID:     args[0],
 				AcceptedFraming: framingFlags.ToProtoAcceptedFraming(),
-				AcceptedPlanId:  planIdFlag.AcceptedPlanId,
 				StreamId:        openStreamFlag.StreamId,
+				PlanId:          planIdFlag.PlanId,
 				IsDebug:         debugFlag.IsDebug,
 				IsVerbose:       verboseFlag.IsVerbose,
 				ShowStats:       statsFlag.ShowStats,
