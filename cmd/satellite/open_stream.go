@@ -64,6 +64,7 @@ func NewOpenStreamCommand() *cobra.Command {
 				return err
 			}
 			if openStreamFlag.EnableAutoClose {
+				fmt.Print("Notice: The open stream flag '--enable-auto-close' which is supplied with an '--auto-close-time' has been deprecated and will be removed in a future release.\n\n")
 				if openStreamFlag.AutoCloseTime == "" {
 					return errors.New("cannot enable auto close without providing an auto close time")
 				}
