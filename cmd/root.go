@@ -31,9 +31,7 @@ var (
 
 		$ stellar auth activate-api-key path/to/stellarstation-private-key.json
 
-		All commands should work after that.
-
-		Notice: The open stream flag '--enable-auto-close' which is supplied with an '--auto-close-time' has been deprecated and will be removed in a future release.'`)
+		All commands should work after that.`)
 	stellarShort = util.Normalize("stellar is a command line tool for using the StellarStation API.")
 )
 
