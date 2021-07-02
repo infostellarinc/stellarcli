@@ -15,17 +15,14 @@
 package satellite
 
 import (
-	"errors"
 	"fmt"
-	"log"
-	"os"
-	"os/signal"
-	"time"
-
 	"github.com/infostellarinc/stellarcli/cmd/flag"
 	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/satellite/stream"
 	"github.com/spf13/cobra"
+	"log"
+	"os"
+	"os/signal"
 )
 
 var (
@@ -63,19 +60,6 @@ func NewOpenStreamCommand() *cobra.Command {
 			if err := flags.ValidateAll(); err != nil {
 				return err
 			}
-			if openStreamFlag.EnableAutoClose {
-				fmt.Print("Notice: The open stream flag '--enable-auto-close' which is supplied with an '--auto-close-time' has been deprecated and will be removed in a future release.\n\n")
-				if openStreamFlag.AutoCloseTime == "" {
-					return errors.New("cannot enable auto close without providing an auto close time")
-				}
-				_, err := time.Parse("2006-01-02 15:04:05", openStreamFlag.AutoCloseTime)
-				if err != nil {
-					return errors.New("couldn't parse auto close time. Please use layout 2006-01-02 15:04:05")
-				}
-				if openStreamFlag.AutoCloseDelay < 1*time.Second || openStreamFlag.AutoCloseDelay > 10*time.Minute {
-					return errors.New("please provide a duration between 1s and 10m")
-				}
-			}
 
 			return nil
 		},
@@ -83,7 +67,6 @@ func NewOpenStreamCommand() *cobra.Command {
 			proxy := proxyFlags.ToProxy()
 			defer proxy.Close()
 
-			autoCloseTime, _ := time.Parse("2006-01-02 15:04:05", openStreamFlag.AutoCloseTime)
 			o := &stream.SatelliteStreamOptions{
 				SatelliteID:     args[0],
 				AcceptedFraming: framingFlags.ToProtoAcceptedFraming(),
@@ -98,8 +81,6 @@ func NewOpenStreamCommand() *cobra.Command {
 				DelayThreshold: correctOrderFlags.DelayThreshold,
 
 				EnableAutoClose: openStreamFlag.EnableAutoClose,
-				AutoCloseDelay:  openStreamFlag.AutoCloseDelay,
-				AutoCloseTime:   autoCloseTime,
 			}
 
 			if proxyFlags.ProxyProtocol == "disabled" && writeFileFlag.FileName == "" {
