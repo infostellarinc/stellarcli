@@ -186,7 +186,6 @@ func (ss *satelliteStream) recvLoop() {
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
 
-
 	// file writer for telemetry data
 	if ss.telemetryFile != nil {
 		ss.telemetryFileWriter = bufio.NewWriter(ss.telemetryFile)
