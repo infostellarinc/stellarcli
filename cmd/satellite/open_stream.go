@@ -16,13 +16,14 @@ package satellite
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
+
 	"github.com/infostellarinc/stellarcli/cmd/flag"
 	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/satellite/stream"
 	"github.com/spf13/cobra"
-	"log"
-	"os"
-	"os/signal"
 )
 
 var (
