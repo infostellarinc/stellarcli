@@ -114,6 +114,7 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		delayThreshold: o.DelayThreshold,
 
 		enableAutoClose: o.EnableAutoClose,
+		closeTickerChan: make(chan struct{}),
 	}
 
 	cleanup, err := s.start()
@@ -181,7 +182,36 @@ func (ss *satelliteStream) ackReceivedTelemetry(telemetryMessageAckId string) {
 	}
 }
 
+func (ss *satelliteStream) performAutoClose() {
+	log.Printf("Stream auto-close conditions met - exiting")
+	if ss.showStats {
+		metrics.logReport()
+	}
+	close(ss.closeTickerChan)
+	ss.Close()
+	os.Exit(0)
+}
+
 func (ss *satelliteStream) recvLoop() {
+	streamEndDetected := false
+
+	if ss.enableAutoClose {
+		ticker := time.NewTicker(1 * time.Second)
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					if streamEndDetected {
+						ss.performAutoClose()
+					}
+				case <-ss.closeTickerChan:
+					ticker.Stop()
+					return
+				}
+			}
+		}()
+	}
+
 	// Initialize exponential back off settings.
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = MaxElapsedTime
@@ -296,6 +326,9 @@ func (ss *satelliteStream) recvLoop() {
 				}
 				payload := telemetry.Data
 				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+				if ss.enableAutoClose && len(payload) == 0 {
+					streamEndDetected = true
+				}
 				if ss.showStats {
 					metrics.collectTelemetry(telemetry)
 				}
