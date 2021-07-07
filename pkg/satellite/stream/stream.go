@@ -76,7 +76,7 @@ type satelliteStream struct {
 	recvChan           chan<- []byte
 	recvLoopClosedChan chan struct{}
 
-	latestByteTime  time.Time
+	latestByteTime time.Time
 
 	telemetryFileWriter *bufio.Writer
 
