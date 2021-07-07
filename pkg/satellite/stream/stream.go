@@ -77,7 +77,6 @@ type satelliteStream struct {
 	recvLoopClosedChan chan struct{}
 
 	latestByteTime  time.Time
-	closeTickerChan chan struct{}
 
 	telemetryFileWriter *bufio.Writer
 
@@ -114,7 +113,6 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		delayThreshold: o.DelayThreshold,
 
 		enableAutoClose: o.EnableAutoClose,
-		closeTickerChan: make(chan struct{}),
 	}
 
 	cleanup, err := s.start()
@@ -187,7 +185,6 @@ func (ss *satelliteStream) performAutoClose() {
 	if ss.showStats {
 		metrics.logReport()
 	}
-	close(ss.closeTickerChan)
 	ss.Close()
 	os.Exit(0)
 }
@@ -204,9 +201,6 @@ func (ss *satelliteStream) recvLoop() {
 					if streamEndDetected {
 						ss.performAutoClose()
 					}
-				case <-ss.closeTickerChan:
-					ticker.Stop()
-					return
 				}
 			}
 		}()
