@@ -73,11 +73,8 @@ type satelliteStream struct {
 	streamId    string
 	planId      string
 
-	recvChan           chan<- []byte
-	recvLoopClosedChan chan struct{}
-
-	latestByteTime  time.Time
-	closeTickerChan chan struct{}
+	receiveChan           chan<- []byte
+	receiveLoopClosedChan chan struct{}
 
 	telemetryFileWriter *bufio.Writer
 
@@ -96,19 +93,19 @@ type satelliteStream struct {
 }
 
 // OpenSatelliteStream opens a stream to a satellite over the StellarStation API.
-func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (SatelliteStream, func(), error) {
-	s := &satelliteStream{
-		acceptedFraming:    o.AcceptedFraming,
-		satelliteId:        o.SatelliteID,
-		streamId:           o.StreamId,
-		planId:             o.PlanId,
-		recvChan:           recvChan,
-		state:              OPEN,
-		recvLoopClosedChan: make(chan struct{}),
-		isDebug:            o.IsDebug,
-		isVerbose:          o.IsVerbose,
-		showStats:          o.ShowStats,
-		telemetryFile:      o.TelemetryFile,
+func OpenSatelliteStream(o *SatelliteStreamOptions, receiveChan chan<- []byte) (SatelliteStream, func(), error) {
+	satelliteStream := &satelliteStream{
+		acceptedFraming:       o.AcceptedFraming,
+		satelliteId:           o.SatelliteID,
+		streamId:              o.StreamId,
+		planId:                o.PlanId,
+		receiveChan:           receiveChan,
+		state:                 OPEN,
+		receiveLoopClosedChan: make(chan struct{}),
+		isDebug:               o.IsDebug,
+		isVerbose:             o.IsVerbose,
+		showStats:             o.ShowStats,
+		telemetryFile:         o.TelemetryFile,
 
 		correctOrder:   o.CorrectOrder,
 		delayThreshold: o.DelayThreshold,
@@ -116,14 +113,14 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, recvChan chan<- []byte) (Sat
 		enableAutoClose: o.EnableAutoClose,
 	}
 
-	cleanup, err := s.start()
+	cleanup, err := satelliteStream.start()
 
-	return s, cleanup, err
+	return satelliteStream, cleanup, err
 }
 
 // Send sends a packet to the satellite.
 func (ss *satelliteStream) Send(payload []byte) error {
-	req := stellarstation.SatelliteStreamRequest{
+	satelliteStreamRequest := stellarstation.SatelliteStreamRequest{
 		SatelliteId: ss.satelliteId,
 		Request: &stellarstation.SatelliteStreamRequest_SendSatelliteCommandsRequest{
 			SendSatelliteCommandsRequest: &stellarstation.SendSatelliteCommandsRequest{
@@ -134,7 +131,7 @@ func (ss *satelliteStream) Send(payload []byte) error {
 
 	log.Verbose("sent data: size: %d bytes\n", len(payload))
 
-	return ss.stream.Send(&req)
+	return ss.stream.Send(&satelliteStreamRequest)
 }
 
 // Close closes the stream.
@@ -144,7 +141,7 @@ func (ss *satelliteStream) Close() error {
 	ss.stream.CloseSend()
 	ss.conn.Close()
 
-	<-ss.recvLoopClosedChan
+	<-ss.receiveLoopClosedChan
 
 	ss.CloseFileWriter()
 
@@ -167,7 +164,7 @@ func (ss *satelliteStream) CloseFileWriter() error {
 // send telemetryMessageAckId to support enableFlowControl feature
 func (ss *satelliteStream) ackReceivedTelemetry(telemetryMessageAckId string) {
 	if telemetryMessageAckId != "" {
-		req := stellarstation.SatelliteStreamRequest{
+		satelliteStreamRequest := stellarstation.SatelliteStreamRequest{
 			SatelliteId: ss.satelliteId,
 			Request: &stellarstation.SatelliteStreamRequest_TelemetryReceivedAck{
 				TelemetryReceivedAck: &stellarstation.ReceiveTelemetryAck{
@@ -177,14 +174,37 @@ func (ss *satelliteStream) ackReceivedTelemetry(telemetryMessageAckId string) {
 			},
 		}
 		log.Debug("sending ack index: %v", telemetryMessageAckId)
-		ss.stream.Send(&req)
+		ss.stream.Send(&satelliteStreamRequest)
 	}
 }
 
-func (ss *satelliteStream) recvLoop() {
+func (ss *satelliteStream) performAutoClose() {
+	log.Printf("Stream auto-close conditions met - exiting")
+	if ss.showStats {
+		metrics.logReport()
+	}
+	ss.Close()
+	os.Exit(0)
+}
+
+func (ss *satelliteStream) receiveLoop() {
+	streamEndDetected := false
+
+	if ss.enableAutoClose {
+		ticker := time.NewTicker(1 * time.Second)
+		go func() {
+			for {
+				<-ticker.C
+				if streamEndDetected {
+					ss.performAutoClose()
+				}
+			}
+		}()
+	}
+
 	// Initialize exponential back off settings.
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = MaxElapsedTime
+	backOff := backoff.NewExponentialBackOff()
+	backOff.MaxElapsedTime = MaxElapsedTime
 
 	// file writer for telemetry data
 	if ss.telemetryFile != nil {
@@ -221,7 +241,7 @@ func (ss *satelliteStream) recvLoop() {
 		// Flush half of the data in the priority queue
 		for i := 0; i < numFlush; i++ {
 			telemetry := pq.Pop().(*stellarstation.Telemetry)
-			ss.recvChan <- telemetry.Data
+			ss.receiveChan <- telemetry.Data
 			if ss.telemetryFileWriter != nil {
 				if _, err := ss.telemetryFileWriter.Write(telemetry.Data); err != nil {
 					panic(err)
@@ -232,17 +252,17 @@ func (ss *satelliteStream) recvLoop() {
 	})
 
 	for {
-		res, err := ss.stream.Recv()
+		streamResponse, err := ss.stream.Recv()
 		if atomic.LoadUint32(&ss.state) == CLOSED {
 			// Closed, so just shutdown the loop.
-			close(ss.recvLoopClosedChan)
+			close(ss.receiveLoopClosedChan)
 			return
 		}
 		if err != nil {
 			log.Println(err)
 			log.Println("reconnecting to the API stream.")
 
-			rcErr := backoff.RetryNotify(func() error {
+			reconnectError := backoff.RetryNotify(func() error {
 				err := ss.openStream(telemetryMessageAckId)
 				if err != nil {
 					return err
@@ -252,14 +272,14 @@ func (ss *satelliteStream) recvLoop() {
 				if err != nil {
 					return err
 				}
-				res = response
+				streamResponse = response
 
 				return nil
-			}, b,
+			}, backOff,
 				func(e error, duration time.Duration) {
 					log.Printf("%s. Automatically retrying in %v", e, duration)
 				})
-			if rcErr != nil {
+			if reconnectError != nil {
 				// This explicit cleanup is not the best solution and should be moved to a global
 				// (or higher-level) cleanup function.
 				ss.CloseFileWriter()
@@ -268,34 +288,33 @@ func (ss *satelliteStream) recvLoop() {
 			}
 			log.Println("connected to the API stream.")
 		}
-		if res == nil {
+		if streamResponse == nil {
 			continue
 		}
-		if ss.streamId != res.StreamId {
-			log.Printf("streamId: %v\n", res.StreamId)
+		if ss.streamId != streamResponse.StreamId {
+			log.Printf("streamId: %v\n", streamResponse.StreamId)
 		}
-		ss.streamId = res.StreamId
+		ss.streamId = streamResponse.StreamId
 		if ss.showStats {
 			metrics.setStreamId(ss.streamId)
 		}
 
-		switch res.Response.(type) {
+		switch streamResponse.Response.(type) {
 		case *stellarstation.SatelliteStreamResponse_ReceiveTelemetryResponse:
-			telResponse := res.GetReceiveTelemetryResponse()
-			if telResponse == nil {
+			telemetryResponse := streamResponse.GetReceiveTelemetryResponse()
+			if telemetryResponse == nil {
 				break
 			}
-			planId := telResponse.PlanId
+			planId := telemetryResponse.PlanId
 			if ss.showStats {
 				metrics.setPlanId(planId)
 			}
-
-			for _, telemetry := range telResponse.Telemetry {
+			for _, telemetry := range telemetryResponse.Telemetry {
 				if telemetry == nil {
 					break
 				}
-				payload := telemetry.Data
-				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(payload))
+				telemetryData := telemetry.Data
+				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(telemetryData))
 				if ss.showStats {
 					metrics.collectTelemetry(telemetry)
 				}
@@ -306,36 +325,40 @@ func (ss *satelliteStream) recvLoop() {
 						pq.Push(telemetry)
 					}()
 				} else {
-					ss.recvChan <- payload
+					ss.receiveChan <- telemetryData
 					if ss.telemetryFileWriter != nil {
-						if _, err := ss.telemetryFileWriter.Write(payload); err != nil {
+						if _, err := ss.telemetryFileWriter.Write(telemetryData); err != nil {
 							panic(err)
 						}
 					}
 				}
 			}
 			// Send ack & update telemetryMessageAckId in case we need to resume from disconnects
-			telemetryMessageAckId = telResponse.MessageAckId
-			ss.ackReceivedTelemetry(telResponse.MessageAckId)
+			telemetryMessageAckId = telemetryResponse.MessageAckId
+			ss.ackReceivedTelemetry(telemetryResponse.MessageAckId)
+
+			// A telemetryResponse containing one telemetry message with a size of zero indicates the stream END message.
+			if ss.enableAutoClose && len(telemetryResponse.Telemetry) == 1 && len(telemetryResponse.Telemetry[0].Data) == 0 {
+				streamEndDetected = true
+			}
 		case *stellarstation.SatelliteStreamResponse_StreamEvent:
-			if res.GetStreamEvent() == nil || res.GetStreamEvent().GetPlanMonitoringEvent() == nil {
+			if streamResponse.GetStreamEvent() == nil || streamResponse.GetStreamEvent().GetPlanMonitoringEvent() == nil {
 				break
 			}
-			streamEvent := res.GetStreamEvent()
+			streamEvent := streamResponse.GetStreamEvent()
 			monitoringEvent := streamEvent.GetPlanMonitoringEvent()
 			planId := monitoringEvent.PlanId
 
 			if ss.isVerbose {
 				if gsState := monitoringEvent.GetGroundStationState(); gsState != nil {
-					if a := gsState.Antenna; a != nil && a.Azimuth != nil && a.Elevation != nil {
-						log.Verbose("planId: %v, azimuth: %v, elevation: %v\n", planId, a.Azimuth.Measured, a.Elevation.Measured)
+					if antennaState := gsState.Antenna; antennaState != nil && antennaState.Azimuth != nil && antennaState.Elevation != nil {
+						log.Verbose("planId: %v, azimuth: %v, elevation: %v\n", planId, antennaState.Azimuth.Measured, antennaState.Elevation.Measured)
 					}
 
-					if rcv := gsState.Receiver; rcv != nil {
-						log.Verbose("central frequency (MHz): %.2f\n", float64(rcv.CenterFrequencyHz)/1e6)
+					if receiverState := gsState.Receiver; receiverState != nil {
+						log.Verbose("central frequency (MHz): %.2f\n", float64(receiverState.CenterFrequencyHz)/1e6)
 					}
 				}
-
 			}
 		}
 	}
@@ -355,7 +378,7 @@ func (ss *satelliteStream) openStream(resumeStreamMessageAckId string) error {
 		return err
 	}
 
-	req := stellarstation.SatelliteStreamRequest{
+	satelliteStreamRequest := stellarstation.SatelliteStreamRequest{
 		AcceptedFraming:          ss.acceptedFraming,
 		SatelliteId:              ss.satelliteId,
 		StreamId:                 ss.streamId,
@@ -364,10 +387,10 @@ func (ss *satelliteStream) openStream(resumeStreamMessageAckId string) error {
 	}
 
 	if ss.planId != "" {
-		req.PlanId = ss.planId
+		satelliteStreamRequest.PlanId = ss.planId
 	}
 
-	err = stream.Send(&req)
+	err = stream.Send(&satelliteStreamRequest)
 	if err != nil {
 		conn.Close()
 		return err
@@ -401,7 +424,7 @@ func (ss *satelliteStream) start() (func(), error) {
 	if err != nil {
 		return nil, err
 	}
-	go ss.recvLoop()
+	go ss.receiveLoop()
 
 	// return a cleanup function to exec on exit
 	cleanup := func() {
