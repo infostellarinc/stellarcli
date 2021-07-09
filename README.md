@@ -1,7 +1,16 @@
 # stellar
 
-A command line utility for accessing the [StellarStation API](https://github.com/infostellarinc/stellarstation-api).
-Let's build stellar apps together!
+The `stellar` command line interface (CLI) is an __experimental__ tool primarily used by the StellarStation development team
+to perform internal end-to-end tests when developing the [StellarStation API](https://github.com/infostellarinc/stellarstation-api).
+
+For best results, it is strongly recommended that users develop their own client interfaces which communicate directly
+with the defined StellarStation API, rather than through the `stellar` CLI tool.
+
+The `stellar` CLI tool is offered with an Open Source license with the purpose of sharing knowledge about the StellarStation platform.
+Anyone is welcome to use this tool for their own testing purposes, or to use it as an example of how a client can communicate
+with the StellarStation API.
+
+Since this tool is in the Alpha stages of development, support is only provided on a "best effort" basis.
 
 ## Download
 
@@ -32,7 +41,8 @@ All commands after that will be authenticated using that key.
 
 ## Testing
 
-When testing the CLI against the [StellarStation API Fakeserver](https://github.com/infostellarinc/stellarstation-api/tree/master/examples/fakeserver), you may change the server endpoint by setting the `STELLARSTATION_API_URL` environment variable, eg:
+When testing the CLI against the [StellarStation API Fakeserver](https://github.com/infostellarinc/stellarstation-api/tree/master/examples/fakeserver),
+you may change the server endpoint by setting the `STELLARSTATION_API_URL` environment variable, eg:
 
 ```bash
 $ export STELLARSTATION_API_URL=localhost:8080
