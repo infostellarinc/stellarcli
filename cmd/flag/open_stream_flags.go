@@ -32,7 +32,7 @@ type OpenStreamFlag struct {
 func (f *OpenStreamFlag) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.StreamId, "stream-id", "r", "", "The StreamId to resume.")
 	cmd.Flags().BoolVarP(&f.EnableAutoClose, "enable-auto-close", "", defaultEnableAutoClose,
-		"When set to true, the stream will close after receiving the stream end message.")
+		"When set to true, the CLI will close after receiving all of the plan's data.")
 }
 
 // Validate flag values.

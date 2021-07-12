@@ -16,11 +16,11 @@ stellar satellite open-stream [satellite-id] [flags]
 ### Options
 
 ```
-      --accepted-framing strings   Framing type to receive. One of: IQ|IMAGE_PNG|IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM|AX25
+      --accepted-framing strings   Framing type to receive. One of: IMAGE_JPEG|FREE_TEXT_UTF8|WATERFALL|BITSTREAM|AX25|IQ|IMAGE_PNG
       --correct-order              When set to true, packets will be sorted by time_first_byte_received. This feature is alpha quality.
       --debug                      Output debug information. (default false)
       --delay-threshold duration   The maximum amount of time that packets remain in the sorting pool. (default 500ms)
-      --enable-auto-close          When set to true, the stream will close after receiving the stream end message.
+      --enable-auto-close          When set to true, the CLI will close after receiving all of the plan's data.
   -h, --help                       help for open-stream
       --output-file string         [Alpha feature] The file to write packets to. Creates file if it does not exist; appends to file if it already exists. (default none)
       --plan-id string             Plan ID to stream data for.
