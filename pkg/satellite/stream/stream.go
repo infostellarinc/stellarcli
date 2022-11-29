@@ -317,7 +317,7 @@ func (ss *satelliteStream) receiveLoop() {
 					break
 				}
 				telemetryData := telemetry.Data
-				log.Debug("received data: streamId: %v, planId: %s, groundStationId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, ss.groundStationId, telemetry.Framing, len(telemetryData))
+				log.Debug("received data: streamId: %v, planId: %s, groundStationId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetryResponse.GroundStationId, telemetry.Framing, len(telemetryData))
 				if ss.showStats {
 					metrics.collectTelemetry(telemetry)
 				}
