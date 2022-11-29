@@ -41,13 +41,14 @@ func NewOpenStreamCommand() *cobra.Command {
 	debugFlag := flag.NewDebugFlag()
 	correctOrderFlags := flag.NewCorrectOrderFlags()
 	framingFlags := flag.NewFramingFlags()
+	groundStationIdFlag := flag.NewGroundStationIdFlag()
 	openStreamFlag := flag.NewOpenStreamFlag()
 	planIdFlag := flag.NewPlanIdFlag()
 	proxyFlags := flag.NewProxyFlags()
 	verboseFlag := flag.NewVerboseFlags()
 	statsFlag := flag.NewStatsFlag()
 	writeFileFlag := flag.NewWriteFileFlag()
-	flags := flag.NewFlagSet(correctOrderFlags, debugFlag, framingFlags, openStreamFlag, planIdFlag, proxyFlags, verboseFlag, statsFlag, writeFileFlag)
+	flags := flag.NewFlagSet(correctOrderFlags, debugFlag, framingFlags, groundStationIdFlag, openStreamFlag, planIdFlag, proxyFlags, verboseFlag, statsFlag, writeFileFlag)
 
 	command := &cobra.Command{
 		Use:   openStreamUse,
@@ -73,6 +74,7 @@ func NewOpenStreamCommand() *cobra.Command {
 				AcceptedFraming: framingFlags.ToProtoAcceptedFraming(),
 				StreamId:        openStreamFlag.StreamId,
 				PlanId:          planIdFlag.PlanId,
+				GroundStationId: groundStationIdFlag.GroundStationId,
 				IsDebug:         debugFlag.IsDebug,
 				IsVerbose:       verboseFlag.IsVerbose,
 				ShowStats:       statsFlag.ShowStats,
