@@ -47,6 +47,7 @@ type SatelliteStreamOptions struct {
 	SatelliteID     string
 	StreamId        string
 	PlanId          string
+	GroundStationId string
 	IsDebug         bool
 	IsVerbose       bool
 	ShowStats       bool
@@ -67,11 +68,12 @@ type SatelliteStream interface {
 type satelliteStream struct {
 	acceptedFraming []stellarstation.Framing
 
-	satelliteId string
-	stream      stellarstation.StellarStationService_OpenSatelliteStreamClient
-	conn        *grpc.ClientConn
-	streamId    string
-	planId      string
+	satelliteId     string
+	stream          stellarstation.StellarStationService_OpenSatelliteStreamClient
+	conn            *grpc.ClientConn
+	streamId        string
+	planId          string
+	groundStationId string
 
 	receiveChan           chan<- []byte
 	receiveLoopClosedChan chan struct{}
@@ -99,6 +101,7 @@ func OpenSatelliteStream(o *SatelliteStreamOptions, receiveChan chan<- []byte) (
 		satelliteId:           o.SatelliteID,
 		streamId:              o.StreamId,
 		planId:                o.PlanId,
+		groundStationId:       o.GroundStationId,
 		receiveChan:           receiveChan,
 		state:                 OPEN,
 		receiveLoopClosedChan: make(chan struct{}),
@@ -314,7 +317,7 @@ func (ss *satelliteStream) receiveLoop() {
 					break
 				}
 				telemetryData := telemetry.Data
-				log.Debug("received data: streamId: %v, planId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetry.Framing, len(telemetryData))
+				log.Debug("received data: streamId: %v, planId: %s, groundStationId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetryResponse.GroundStationId, telemetry.Framing, len(telemetryData))
 				if ss.showStats {
 					metrics.collectTelemetry(telemetry)
 				}
@@ -388,6 +391,10 @@ func (ss *satelliteStream) openStream(resumeStreamMessageAckId string) error {
 
 	if ss.planId != "" {
 		satelliteStreamRequest.PlanId = ss.planId
+	}
+
+	if ss.groundStationId != "" {
+		satelliteStreamRequest.GroundStationId = ss.groundStationId
 	}
 
 	err = stream.Send(&satelliteStreamRequest)
