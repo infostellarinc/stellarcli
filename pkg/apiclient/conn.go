@@ -16,38 +16,76 @@ package apiclient
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"io/ioutil"
 	"os"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/infostellarinc/stellarcli/pkg/auth"
 	log "github.com/infostellarinc/stellarcli/pkg/logger"
+)
+
+const (
+	SkipSSLVerify = true
 )
 
 // Dial opens a gRPC connection to the StellarStation API with authentication setup.
 func Dial() (*grpc.ClientConn, error) {
-	creds, err := auth.NewDefaultCredentials()
-	if err != nil {
-		return nil, err
-	}
-
 	apiUrl := os.Getenv("STELLARSTATION_API_URL")
 	if len(apiUrl) == 0 {
 		apiUrl = "api.stellarstation.com:443"
 	}
 	log.Printf("API endpoint: %s", apiUrl)
 
-	tlsConfig := &tls.Config{}
-	if strings.HasPrefix(apiUrl, "localhost") || strings.HasPrefix(apiUrl, "127.0.0.1") {
-		tlsConfig.InsecureSkipVerify = true
+	certPath := os.Getenv("STELLARCLI_TLS_CERT_PATH")
+	keyPath := os.Getenv("STELLARCLI_TLS_KEY_PATH")
+	caPath := os.Getenv("STELLARCLI_CA_KEY_PATH")
+
+	tls, err := NewTLSCreds(certPath, keyPath, caPath)
+	if err != nil {
+		log.Printf("failed to setup tls")
 	}
 
 	return grpc.Dial(
 		apiUrl,
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithPerRPCCredentials(creds),
+		grpc.WithTransportCredentials(tls),
 		// Set receive size to a somewhat safe 9MiB.
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(9437000)))
+}
+
+func NewTLSCreds(certPath, keyPath, caPath string) (credentials.TransportCredentials, error) {
+	if ok, err := exists(certPath); err != nil || !ok {
+		return nil, fmt.Errorf("missing file mtls certificate")
+	}
+
+	certificate, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile(caPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		return nil, err
+	}
+
+	return credentials.NewTLS(&tls.Config{
+		RootCAs:            certPool,
+		Certificates:       []tls.Certificate{certificate},
+		InsecureSkipVerify: SkipSSLVerify,
+	}), nil
+}
+
+func exists(name string) (bool, error) {
+	_, err := os.Stat(name)
+	if err == nil {
+		return true, nil
+	}
+	return false, fmt.Errorf("could not load file (%v): %w", name, err)
 }
