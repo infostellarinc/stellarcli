@@ -41,7 +41,7 @@ func Dial() (*grpc.ClientConn, error) {
 
 	certPath := os.Getenv("STELLARCLI_TLS_CERT_PATH")
 	keyPath := os.Getenv("STELLARCLI_TLS_KEY_PATH")
-	caPath := os.Getenv("STELLARCLI_TLS_CA_KEY_PATH")
+	caPath := os.Getenv("STELLARCLI_TLS_CA_PATH")
 
 	tls, err := NewTLSCreds(certPath, keyPath, caPath)
 	if err != nil {
