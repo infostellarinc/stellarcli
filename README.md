@@ -35,6 +35,12 @@ $ stellar auth activate-api-key path/to/stellarstation-private-key.json
 
 All commands after that will be authenticated using that key.
 
+### interactive-plan: Why are things misaligning? Why are borders at the wrong widths?
+
+This is most likely due to your locale and encoding, particularly with regard to Chinese, Japanese, and Korean (for example, `zh_CN.UTF-8` or `ja_JP.UTF-8`). The most direct way to fix this is to set `RUNEWIDTH_EASTASIAN=0` in your environment.
+
+For details see https://github.com/charmbracelet/lipgloss/issues/40.
+
 ## Documentation
 
 [Documentation](/docs/stellar.md) page describes more detail of stellar commands.
@@ -50,17 +56,9 @@ $ export STELLARSTATION_API_URL=localhost:8080
 
 ## Developing
 
-The utility requires either Java 15 or Go 1.13. When using Java with Gradle, Go is automatically
-downloaded and does not need to be installed.
+We stay on the 2nd latest Go version to ensure security patches and to avoid any issues on any releases.
 
 ```bash
-# Java users
-$ export JAVA_HOME=/path/to/jdk
-$ ./gradlew build
-
 # Go users
 $ go build
 ```
-
-The Gradle build using Java is our canonical build and is recommended to make sure results are
-the same as continuous integration.
