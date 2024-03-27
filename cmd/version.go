@@ -17,10 +17,9 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/infostellarinc/stellarcli/cmd/app"
 	"github.com/spf13/cobra"
 )
-
-var ReleaseVersion string
 
 // Create version command.
 func NewVersionCommand() *cobra.Command {
@@ -31,7 +30,7 @@ func NewVersionCommand() *cobra.Command {
 		Long:  "Version prints the stellar version.",
 
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("v%s\n", ReleaseVersion)
+			fmt.Printf("v%s\n", app.ReleaseVersion)
 		},
 	}
 

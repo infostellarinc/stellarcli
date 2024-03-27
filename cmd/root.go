@@ -19,6 +19,7 @@ import (
 
 	"github.com/infostellarinc/stellarcli/cmd/auth"
 	"github.com/infostellarinc/stellarcli/cmd/groundstation"
+	"github.com/infostellarinc/stellarcli/cmd/interactive"
 	"github.com/infostellarinc/stellarcli/cmd/satellite"
 	"github.com/infostellarinc/stellarcli/cmd/util"
 )
@@ -47,6 +48,9 @@ func NewRootCommand() *cobra.Command {
 	command.AddCommand(auth.NewAuthCommand())
 	command.AddCommand(groundstation.NewGroundStationCommand())
 	command.AddCommand(satellite.NewSatelliteCommand())
+	interactiveCmd := interactive.NewInteractiveCommand()
+	interactiveCmd.PersistentFlags().Bool("debug", false, "show debug details")
+	command.AddCommand(interactiveCmd)
 	command.AddCommand(NewVersionCommand())
 
 	return command
