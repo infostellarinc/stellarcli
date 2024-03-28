@@ -50,17 +50,9 @@ $ export STELLARSTATION_API_URL=localhost:8080
 
 ## Developing
 
-The utility requires either Java 15 or Go 1.13. When using Java with Gradle, Go is automatically
-downloaded and does not need to be installed.
+We stay on the 2nd latest Go version to ensure security patches and to avoid any issues on any releases.
 
 ```bash
-# Java users
-$ export JAVA_HOME=/path/to/jdk
-$ ./gradlew build
-
 # Go users
 $ go build
 ```
-
-The Gradle build using Java is our canonical build and is recommended to make sure results are
-the same as continuous integration.
