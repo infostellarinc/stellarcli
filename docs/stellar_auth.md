@@ -2,10 +2,6 @@
 
 Commands for authenticating the stellar tool.
 
-### Synopsis
-
-Commands for authenticating the stellar tool.
-
 ### Options
 
 ```
