@@ -16,7 +16,6 @@ package tle
 
 import (
 	"context"
-	"fmt"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/go-stellarstation/api/v1/orbit"
@@ -52,10 +51,11 @@ func AddTLE(o *AddTLEOptions) {
 
 	_, err = client.AddTle(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("problem adding TLE: %v\n", err)
+		return
 	}
 
 	defer o.Printer.Flush()
-	message := fmt.Sprintf("Succeeded to add the TLE.")
+	message := "Succeeded to add the TLE."
 	o.Printer.Write([]interface{}{message})
 }

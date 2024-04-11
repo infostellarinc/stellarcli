@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/infostellarinc/go-stellarstation/api/v1/groundstation"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
@@ -48,15 +48,8 @@ func ListUW(o *ListUWOptions) {
 	}
 	defer conn.Close()
 
-	startTimeTimestamp, err := ptypes.TimestampProto(o.StartTime.UTC())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	endTimeTimestamp, err := ptypes.TimestampProto(o.EndTime.UTC())
-	if err != nil {
-		log.Fatal(err)
-	}
+	startTimeTimestamp := timestamppb.New(o.StartTime.UTC())
+	endTimeTimestamp := timestamppb.New(o.EndTime.UTC())
 
 	client := groundstation.NewGroundStationServiceClient(conn)
 	request := &groundstation.ListUnavailabilityWindowsRequest{
@@ -67,22 +60,16 @@ func ListUW(o *ListUWOptions) {
 
 	result, err := client.ListUnavailabilityWindows(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("problem listing unavailability windows: %v\n", err)
+		return
 	}
 
 	defer o.Printer.Flush()
 	o.Printer.Write(headers)
 
 	for _, window := range result.Window {
-		startTime, err := ptypes.Timestamp(window.StartTime)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		endTime, err := ptypes.Timestamp(window.EndTime)
-		if err != nil {
-			log.Fatal(err)
-		}
+		startTime := window.GetStartTime().AsTime()
+		endTime := window.GetEndTime().AsTime()
 
 		record := []interface{}{
 			window.WindowId,

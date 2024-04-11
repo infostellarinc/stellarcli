@@ -41,7 +41,9 @@ func Dial() (*grpc.ClientConn, error) {
 	}
 	log.Printf("API endpoint: %s", apiUrl)
 
-	tlsConfig := &tls.Config{}
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
 	if strings.HasPrefix(apiUrl, "localhost") || strings.HasPrefix(apiUrl, "127.0.0.1") {
 		tlsConfig.InsecureSkipVerify = true
 	}

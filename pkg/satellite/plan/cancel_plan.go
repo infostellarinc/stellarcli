@@ -44,7 +44,8 @@ func CancelPlan(o *CancelPlanOptions) {
 
 	_, err = client.CancelPlan(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("error cancelling plan: %v", err)
+		return
 	}
 
 	defer o.Printer.Flush()

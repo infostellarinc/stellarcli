@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
@@ -27,36 +27,36 @@ import (
 )
 
 var listPlansVerboseTemplate = []printer.TemplateItem{
-	{"ID", "id"},
-	{"SATELLITE_ID", "satelliteId"},
-	{"CHANNEL_SET_NAME", "channelSet.name"},
-	{"CHANNEL_SET_ID", "channelSet.id"},
-	{"STATUS", "status"},
-	{"AOS_TIME", "aos"},
-	{"LOS_TIME", "los"},
-	{"GS_ID", "gsInfo.id"},
-	{"GS_ORG_NAME", "gsInfo.orgName"},
-	{"GS_LAT", "gsInfo.latitude"},
-	{"GS_LONG", "gsInfo.longitude"},
-	{"GS_COUNTRY", "gsInfo.country"},
-	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
-	{"MAX_ELEVATION_TIME", "maxElevationTime"},
-	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
-	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
-	{"UNIT_PRICE", "unitPrice"},
+	{Label: "ID", Path: "id"},
+	{Label: "SATELLITE_ID", Path: "satelliteId"},
+	{Label: "CHANNEL_SET_NAME", Path: "channelSet.name"},
+	{Label: "CHANNEL_SET_ID", Path: "channelSet.id"},
+	{Label: "STATUS", Path: "status"},
+	{Label: "AOS_TIME", Path: "aos"},
+	{Label: "LOS_TIME", Path: "los"},
+	{Label: "GS_ID", Path: "gsInfo.id"},
+	{Label: "GS_ORG_NAME", Path: "gsInfo.orgName"},
+	{Label: "GS_LAT", Path: "gsInfo.latitude"},
+	{Label: "GS_LONG", Path: "gsInfo.longitude"},
+	{Label: "GS_COUNTRY", Path: "gsInfo.country"},
+	{Label: "MAX_ELEVATION_DEGREE", Path: "maxElevationDegree"},
+	{Label: "MAX_ELEVATION_TIME", Path: "maxElevationTime"},
+	{Label: "DL_FREQ_HZ", Path: "channelSet.downlink.frequency"},
+	{Label: "UL_FREQ_HZ", Path: "channelSet.uplink.frequency"},
+	{Label: "UNIT_PRICE", Path: "unitPrice"},
 }
 
 var listPlansTemplate = []printer.TemplateItem{
-	{"ID", "id"},
-	{"SATELLITE_ID", "satelliteId"},
-	{"CHANNEL_SET_NAME", "channelSet.name"},
-	{"STATUS", "status"},
-	{"AOS_TIME", "aos"},
-	{"LOS_TIME", "los"},
-	{"GS_ORG_NAME", "gsInfo.orgName"},
-	{"GS_COUNTRY", "gsInfo.country"},
-	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
-	{"UNIT_PRICE", "unitPrice"},
+	{Label: "ID", Path: "id"},
+	{Label: "SATELLITE_ID", Path: "satelliteId"},
+	{Label: "CHANNEL_SET_NAME", Path: "channelSet.name"},
+	{Label: "STATUS", Path: "status"},
+	{Label: "AOS_TIME", Path: "aos"},
+	{Label: "LOS_TIME", Path: "los"},
+	{Label: "GS_ORG_NAME", Path: "gsInfo.orgName"},
+	{Label: "GS_COUNTRY", Path: "gsInfo.country"},
+	{Label: "MAX_ELEVATION_DEGREE", Path: "maxElevationDegree"},
+	{Label: "UNIT_PRICE", Path: "unitPrice"},
 }
 
 type ListOptions struct {
@@ -75,15 +75,8 @@ func ListPlans(o *ListOptions) {
 	}
 	defer conn.Close()
 
-	aosAfterTimestamp, err := ptypes.TimestampProto(o.AOSAfter.UTC())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	aosBeforeTimestamp, err := ptypes.TimestampProto(o.AOSBefore.UTC())
-	if err != nil {
-		log.Fatal(err)
-	}
+	aosAfterTimestamp := timestamppb.New(o.AOSAfter.UTC())
+	aosBeforeTimestamp := timestamppb.New(o.AOSBefore.UTC())
 
 	client := stellarstation.NewStellarStationServiceClient(conn)
 	request := &stellarstation.ListPlansRequest{
@@ -94,7 +87,8 @@ func ListPlans(o *ListOptions) {
 
 	result, err := client.ListPlans(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("error listing plans: %v", err)
+		return
 	}
 
 	targetTemplate := listPlansTemplate
@@ -107,20 +101,9 @@ func ListPlans(o *ListOptions) {
 
 	var results []map[string]interface{}
 	for _, plan := range result.Plan {
-		aos, err := ptypes.Timestamp(plan.AosTime)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		los, err := ptypes.Timestamp(plan.LosTime)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		maxElevationTime, err := ptypes.Timestamp(plan.MaxElevationTime)
-		if err != nil {
-			log.Fatal(err)
-		}
+		aos := plan.GetAosTime().AsTime()
+		los := plan.GetLosTime().AsTime()
+		maxElevationTime := plan.GetMaxElevationTime().AsTime()
 
 		channelSet := plan.ChannelSet
 		downlink := make(map[string]interface{})

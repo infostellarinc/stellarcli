@@ -42,7 +42,7 @@ func TestMetricLogging(t *testing.T) {
 		metrics.collectMessage(i)
 		t := time.Now().Add(-time.Duration(i) * time.Nanosecond)
 		metrics.collectTelemetry(&stellarstation.Telemetry{
-			Data:                  make([]byte, 5, 5),
+			Data:                  make([]byte, 5),
 			TimeFirstByteReceived: ToTimestamp(&t),
 			TimeLastByteReceived:  ToTimestamp(&t),
 		})

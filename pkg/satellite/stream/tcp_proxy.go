@@ -15,6 +15,7 @@
 package stream
 
 import (
+	"errors"
 	"io"
 	"net"
 	"time"
@@ -106,10 +107,10 @@ func (p *tcpProxy) serve() {
 			log.Println("connected clients:", len(conns))
 		case payload := <-p.streamChan:
 			for conn := range conns {
-				conn.Write(payload)
+				_, _ = conn.Write(payload)
 			}
 		case command := <-p.commandChan:
-			p.stream.Send(command)
+			_ = p.stream.Send(command)
 		}
 	}
 
@@ -123,13 +124,13 @@ func (p *tcpProxy) handleConn(conn net.Conn) {
 
 	buf := make([]byte, 1024*1024)
 	for {
-		conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+		_ = conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 		n, err := conn.Read(buf)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return
 			} else if !err.(net.Error).Timeout() {
-				log.Fatal(err)
+				log.Printf("got unexpected error: %v\n", err)
 				return
 			}
 			// Pass through timeout error.

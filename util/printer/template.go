@@ -20,7 +20,6 @@ import (
 	"strings"
 )
 
-//
 type TemplateItem struct {
 	Label string
 	Path  string
@@ -61,10 +60,8 @@ func GetValue(m map[string]interface{}, path string) (error, interface{}) {
 			return fmt.Errorf("cannot find a value for the path, %s", path), nil
 		}
 
-		switch v.(type) {
-		case map[string]interface{}:
-			current = v.(map[string]interface{})
-		default:
+		current, ok = v.(map[string]interface{})
+		if !ok {
 			return nil, v
 		}
 	}

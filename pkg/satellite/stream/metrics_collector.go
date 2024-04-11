@@ -146,15 +146,6 @@ func (metrics *MetricsCollector) collectMessage(messageSizeBytes int) {
 	metrics.totalBytesReceived += int64(messageSizeBytes)
 }
 
-func (metrics *MetricsCollector) collectAntenna(azimuth, elevation float64) {
-	metrics.azimuth = azimuth
-	metrics.elevation = elevation
-}
-
-func (metrics *MetricsCollector) collectReceiver(frequency float64) {
-	metrics.frequency = frequency
-}
-
 func toTime(ts *timestamp.Timestamp) *time.Time {
 	if ts == nil {
 		return nil
@@ -169,13 +160,6 @@ func timestampNow() *timestamp.Timestamp {
 		Seconds: now.Unix(),
 		Nanos:   int32(now.Nanosecond()),
 	}
-}
-
-func formatTimeLocal(ts *time.Time) string {
-	if ts == nil {
-		return ""
-	}
-	return ts.Format(time.RFC3339)
 }
 
 func formatTimestampLocal(ts *timestamp.Timestamp) string {
@@ -196,32 +180,32 @@ func duration(start, end *timestamp.Timestamp) string {
 	if start == nil || end == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s", toTime(end).Sub(*toTime(start)))
+	return toTime(end).Sub(*toTime(start)).String()
 }
 
 func (metrics *MetricsCollector) logReport() {
 	if metrics.totalMessagesReceived > 0 {
 		// Dont use metrics.logger because it might be in overwrite mode
 		logger := fmt.Printf
-		logger("\n\n")
-		logger("[STATS] %s, Pass summary:\n", time.Now().Format("20060102 15:04:05"))
-		logger("\n")
-		logger("  Plan ID   : %s\n", metrics.planId)
-		logger("  Stream ID : %s\n", metrics.streamId)
-		logger("\n")
-		logger("  Datatake (Starpass timestamp)\n")
-		logger("  First byte received   : %s (UTC %s)\n", formatTimestampLocal(metrics.starpassTimeFirstByteReceived), formatTimestampUTC(metrics.starpassTimeFirstByteReceived))
-		logger("  Last  byte received   : %s (UTC %s)\n", formatTimestampLocal(metrics.starpassTimeLastByteReceived), formatTimestampUTC(metrics.starpassTimeLastByteReceived))
-		logger("  Duration              : %s\n", duration(metrics.starpassTimeFirstByteReceived, metrics.starpassTimeLastByteReceived))
-		logger("\n")
-		logger("  CLI data receive (local timestamp)\n")
-		logger("  First chunk received  : %s (%s after datatake first byte)\n", formatTimestampLocal(metrics.localTimeFirstByteReceived), duration(metrics.starpassTimeFirstByteReceived, metrics.localTimeFirstByteReceived))
-		logger("  Last  chunk received  : %s (%s after datatake last byte)\n", formatTimestampLocal(metrics.localTimeLastByteReceived), duration(metrics.starpassTimeLastByteReceived, metrics.localTimeLastByteReceived))
-		logger("  Total bytes received  : %d (%s)\n", metrics.totalBytesReceived, humanReadableBytes(metrics.totalBytesReceived))
-		logger("  Total chunks          : %d\n", metrics.totalMessagesReceived)
-		logger("  Average rate (bits/s) : %sbps\n", humanReadableCountSI(metrics.avgRate()))
-		logger("  Average delay         : %s\n", humanReadableNanoSeconds(metrics.avgDelay()))
-		logger("\n\n")
+		_, _ = logger("\n\n")
+		_, _ = logger("[STATS] %s, Pass summary:\n", time.Now().Format("20060102 15:04:05"))
+		_, _ = logger("\n")
+		_, _ = logger("  Plan ID   : %s\n", metrics.planId)
+		_, _ = logger("  Stream ID : %s\n", metrics.streamId)
+		_, _ = logger("\n")
+		_, _ = logger("  Datatake (Starpass timestamp)\n")
+		_, _ = logger("  First byte received   : %s (UTC %s)\n", formatTimestampLocal(metrics.starpassTimeFirstByteReceived), formatTimestampUTC(metrics.starpassTimeFirstByteReceived))
+		_, _ = logger("  Last  byte received   : %s (UTC %s)\n", formatTimestampLocal(metrics.starpassTimeLastByteReceived), formatTimestampUTC(metrics.starpassTimeLastByteReceived))
+		_, _ = logger("  Duration              : %s\n", duration(metrics.starpassTimeFirstByteReceived, metrics.starpassTimeLastByteReceived))
+		_, _ = logger("\n")
+		_, _ = logger("  CLI data receive (local timestamp)\n")
+		_, _ = logger("  First chunk received  : %s (%s after datatake first byte)\n", formatTimestampLocal(metrics.localTimeFirstByteReceived), duration(metrics.starpassTimeFirstByteReceived, metrics.localTimeFirstByteReceived))
+		_, _ = logger("  Last  chunk received  : %s (%s after datatake last byte)\n", formatTimestampLocal(metrics.localTimeLastByteReceived), duration(metrics.starpassTimeLastByteReceived, metrics.localTimeLastByteReceived))
+		_, _ = logger("  Total bytes received  : %d (%s)\n", metrics.totalBytesReceived, humanReadableBytes(metrics.totalBytesReceived))
+		_, _ = logger("  Total chunks          : %d\n", metrics.totalMessagesReceived)
+		_, _ = logger("  Average rate (bits/s) : %sbps\n", humanReadableCountSI(metrics.avgRate()))
+		_, _ = logger("  Average delay         : %s\n", humanReadableNanoSeconds(metrics.avgDelay()))
+		_, _ = logger("\n\n")
 	}
 }
 
@@ -294,7 +278,9 @@ func (metrics *MetricsCollector) instantRate() int64 {
 
 // converts number (typically bytes or bits) to human readable SI string
 // eg: bytes=1200 -> 1.2k
-// 	   bytes=1200000 0> 1.2M
+//
+//	bytes=1200000 0> 1.2M
+//
 // ported from https://stackoverflow.com/questions/3758606/how-to-convert-byte-size-into-human-readable-format-in-java
 func humanReadableCountSI(bytes int64) string {
 	if -1000 < bytes && bytes < 1000 {

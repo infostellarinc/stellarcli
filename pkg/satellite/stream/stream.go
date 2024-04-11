@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
@@ -69,6 +68,7 @@ type satelliteStream struct {
 	acceptedFraming []stellarstation.Framing
 
 	satelliteId     string
+	sendLock        sync.Mutex
 	stream          stellarstation.StellarStationService_OpenSatelliteStreamClient
 	conn            *grpc.ClientConn
 	streamId        string
@@ -134,6 +134,8 @@ func (ss *satelliteStream) Send(payload []byte) error {
 
 	log.Verbose("sent data: size: %d bytes\n", len(payload))
 
+	ss.sendLock.Lock()
+	defer ss.sendLock.Unlock()
 	return ss.stream.Send(&satelliteStreamRequest)
 }
 
@@ -141,12 +143,12 @@ func (ss *satelliteStream) Send(payload []byte) error {
 func (ss *satelliteStream) Close() error {
 	atomic.StoreUint32(&ss.state, CLOSED)
 
-	ss.stream.CloseSend()
+	_ = ss.stream.CloseSend()
 	ss.conn.Close()
 
 	<-ss.receiveLoopClosedChan
 
-	ss.CloseFileWriter()
+	_ = ss.CloseFileWriter()
 
 	return nil
 }
@@ -177,7 +179,9 @@ func (ss *satelliteStream) ackReceivedTelemetry(telemetryMessageAckId string) {
 			},
 		}
 		log.Debug("sending ack index: %v", telemetryMessageAckId)
-		ss.stream.Send(&satelliteStreamRequest)
+		ss.sendLock.Lock()
+		defer ss.sendLock.Unlock()
+		_ = ss.stream.Send(&satelliteStreamRequest)
 	}
 }
 
@@ -219,14 +223,8 @@ func (ss *satelliteStream) receiveLoop() {
 		telemetry1 := i.(*stellarstation.Telemetry)
 		telemetry2 := j.(*stellarstation.Telemetry)
 
-		time1, err := ptypes.Timestamp(telemetry1.TimeFirstByteReceived)
-		if err != nil {
-			log.Fatal(err)
-		}
-		time2, err := ptypes.Timestamp(telemetry2.TimeFirstByteReceived)
-		if err != nil {
-			log.Fatal(err)
-		}
+		time1 := telemetry1.GetTimeFirstByteReceived().AsTime()
+		time2 := telemetry2.GetTimeFirstByteReceived().AsTime()
 
 		return !time1.After(time2)
 	})
@@ -285,7 +283,7 @@ func (ss *satelliteStream) receiveLoop() {
 			if reconnectError != nil {
 				// This explicit cleanup is not the best solution and should be moved to a global
 				// (or higher-level) cleanup function.
-				ss.CloseFileWriter()
+				_ = ss.CloseFileWriter()
 				// Couldn't reconnect to the server, bailout.
 				log.Fatalf("error connecting to API stream: %v\n", err)
 			}
@@ -316,6 +314,8 @@ func (ss *satelliteStream) receiveLoop() {
 				if telemetry == nil {
 					break
 				}
+				// remove in 1.22
+				telemetry := telemetry
 				telemetryData := telemetry.Data
 				log.Debug("received data: streamId: %v, planId: %s, groundStationId: %s, framing type: %s, size: %d bytes\n", ss.streamId, planId, telemetryResponse.GroundStationId, telemetry.Framing, len(telemetryData))
 				if ss.showStats {
@@ -397,7 +397,9 @@ func (ss *satelliteStream) openStream(resumeStreamMessageAckId string) error {
 		satelliteStreamRequest.GroundStationId = ss.groundStationId
 	}
 
+	ss.sendLock.Lock()
 	err = stream.Send(&satelliteStreamRequest)
+	ss.sendLock.Unlock()
 	if err != nil {
 		conn.Close()
 		return err
@@ -438,7 +440,7 @@ func (ss *satelliteStream) start() (func(), error) {
 		if ss.showStats {
 			metrics.logReport()
 		}
-		ss.CloseFileWriter()
+		_ = ss.CloseFileWriter()
 	}
 	return cleanup, nil
 }

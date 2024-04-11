@@ -67,8 +67,8 @@ func (p *JSONPrinter) WriteWithTemplate(r []map[string]interface{}, t []Template
 		log.Fatal(indErr)
 	}
 
-	p.writer.Write(indBuffer.Bytes())
-	p.writer.WriteString("\n")
+	_, _ = p.writer.Write(indBuffer.Bytes())
+	_, _ = p.writer.WriteString("\n")
 }
 
 func NewJSONPrinterOptions(output io.Writer) JSONPrinterOptions {

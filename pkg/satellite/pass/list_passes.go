@@ -17,8 +17,6 @@ package pass
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes"
-
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 	log "github.com/infostellarinc/stellarcli/pkg/logger"
@@ -26,37 +24,37 @@ import (
 )
 
 var listPassesVerboseTemplate = []printer.TemplateItem{
-	{"RESERVATION_TOKEN", "reservationToken"},
-	{"AOS_TIME", "aos"},
-	{"LOS_TIME", "los"},
-	{"GS_ID", "gsInfo.id"},
-	{"GS_ORG_NAME", "gsInfo.orgName"},
-	{"GS_LAT", "gsInfo.latitude"},
-	{"GS_LONG", "gsInfo.longitude"},
-	{"GS_COUNTRY", "gsInfo.country"},
-	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
-	{"MAX_ELEVATION_TIME", "maxElevationTime"},
-	{"CHANNEL_SET_ID", "channelSet.id"},
-	{"CHANNEL_SET_NAME", "channelSet.name"},
-	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
-	{"DL_MODULATION", "channelSet.downlink.modulation"},
-	{"DL_BITRATE", "channelSet.downlink.bitrate"},
-	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
-	{"UL_MODULATION", "channelSet.uplink.modulation"},
-	{"UL_BITRATE", "channelSet.uplink.bitrate"},
-	{"UNIT_PRICE", "unitPrice"},
+	{Label: "RESERVATION_TOKEN", Path: "reservationToken"},
+	{Label: "AOS_TIME", Path: "aos"},
+	{Label: "LOS_TIME", Path: "los"},
+	{Label: "GS_ID", Path: "gsInfo.id"},
+	{Label: "GS_ORG_NAME", Path: "gsInfo.orgName"},
+	{Label: "GS_LAT", Path: "gsInfo.latitude"},
+	{Label: "GS_LONG", Path: "gsInfo.longitude"},
+	{Label: "GS_COUNTRY", Path: "gsInfo.country"},
+	{Label: "MAX_ELEVATION_DEGREE", Path: "maxElevationDegree"},
+	{Label: "MAX_ELEVATION_TIME", Path: "maxElevationTime"},
+	{Label: "CHANNEL_SET_ID", Path: "channelSet.id"},
+	{Label: "CHANNEL_SET_NAME", Path: "channelSet.name"},
+	{Label: "DL_FREQ_HZ", Path: "channelSet.downlink.frequency"},
+	{Label: "DL_MODULATION", Path: "channelSet.downlink.modulation"},
+	{Label: "DL_BITRATE", Path: "channelSet.downlink.bitrate"},
+	{Label: "UL_FREQ_HZ", Path: "channelSet.uplink.frequency"},
+	{Label: "UL_MODULATION", Path: "channelSet.uplink.modulation"},
+	{Label: "UL_BITRATE", Path: "channelSet.uplink.bitrate"},
+	{Label: "UNIT_PRICE", Path: "unitPrice"},
 }
 
 var listPassesTemplate = []printer.TemplateItem{
-	{"AOS_TIME", "aos"},
-	{"LOS_TIME", "los"},
-	{"GS_LAT", "gsInfo.latitude"},
-	{"GS_LONG", "gsInfo.longitude"},
-	{"GS_COUNTRY", "gsInfo.country"},
-	{"MAX_ELEVATION_DEGREE", "maxElevationDegree"},
-	{"CHANNEL_SET_NAME", "channelSet.name"},
-	{"DL_FREQ_HZ", "channelSet.downlink.frequency"},
-	{"UL_FREQ_HZ", "channelSet.uplink.frequency"},
+	{Label: "AOS_TIME", Path: "aos"},
+	{Label: "LOS_TIME", Path: "los"},
+	{Label: "GS_LAT", Path: "gsInfo.latitude"},
+	{Label: "GS_LONG", Path: "gsInfo.longitude"},
+	{Label: "GS_COUNTRY", Path: "gsInfo.country"},
+	{Label: "MAX_ELEVATION_DEGREE", Path: "maxElevationDegree"},
+	{Label: "CHANNEL_SET_NAME", Path: "channelSet.name"},
+	{Label: "DL_FREQ_HZ", Path: "channelSet.downlink.frequency"},
+	{Label: "UL_FREQ_HZ", Path: "channelSet.uplink.frequency"},
 }
 
 type ListAvailablePassesOptions struct {
@@ -79,7 +77,8 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 
 	result, err := client.ListUpcomingAvailablePasses(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("problem fetching upcoming passes: %v", err)
+		return
 	}
 
 	targetTemplate := listPassesTemplate
@@ -92,20 +91,9 @@ func ListAvailablePasses(o *ListAvailablePassesOptions) {
 
 	var results []map[string]interface{}
 	for _, pass := range result.Pass {
-		aos, err := ptypes.Timestamp(pass.AosTime)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		los, err := ptypes.Timestamp(pass.LosTime)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		maxElevationTime, err := ptypes.Timestamp(pass.MaxElevationTime)
-		if err != nil {
-			log.Fatal(err)
-		}
+		aos := pass.GetAosTime().AsTime()
+		los := pass.GetLosTime().AsTime()
+		maxElevationTime := pass.GetMaxElevationTime().AsTime()
 
 		if pass.MaxElevationDegrees > o.MinElevation {
 			channelSetTokens := pass.ChannelSetToken
