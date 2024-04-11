@@ -1,0 +1,31 @@
+name: test
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "README.MD"
+      - ".github/workflows/*"
+  pull_request:
+    paths-ignore:
+      - "README.MD"
+      - ".github/workflows/*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - name: Tests
+        run: |
+          go test ./... -race
