@@ -21,6 +21,7 @@ import (
 	"time"
 )
 
+var logMu sync.RWMutex
 var lastLoggedTimestamp time.Time
 var emitRateMillis = 2000
 var isVerbose = false
@@ -111,10 +112,15 @@ func Debug(format string, v ...interface{}) {
 }
 
 func throttleCheck() bool {
+	logMu.RLock()
 	if lastLoggedTimestamp.Add(time.Millisecond * time.Duration(emitRateMillis)).Before(time.Now()) {
+		logMu.RUnlock()
+		logMu.Lock()
 		lastLoggedTimestamp = time.Now()
+		logMu.Unlock()
 		return true
 	}
+	logMu.RUnlock()
 	return false
 }
 
@@ -135,7 +141,9 @@ func LastLine(format string, v ...interface{}) {
 
 func deferPrint(format string, v ...interface{}) {
 	s := fmt.Sprintf(format, v...)
+	throttleSchedulerLock.Lock()
 	lastThrottledLine = &s
+	throttleSchedulerLock.Unlock()
 
 	throttleSchedulerLock.Lock()
 	if !throttleCheckSchedulerRunning {
@@ -147,17 +155,21 @@ func deferPrint(format string, v ...interface{}) {
 
 func scheduleDeferLogCheck() {
 	uptimeTicker := time.NewTicker(time.Duration(emitRateMillis) / 5 * time.Millisecond)
+	defer uptimeTicker.Stop()
 	for {
 		<-uptimeTicker.C
+		throttleSchedulerLock.Lock()
 		if lastThrottledLine != nil && throttleCheck() {
 			lineCheck()
+
 			fmt.Printf("%s", *lastThrottledLine)
 			lastThrottledLine = nil
-			throttleSchedulerLock.Lock()
 			throttleCheckSchedulerRunning = false
+
 			throttleSchedulerLock.Unlock()
 			return
 		}
+		throttleSchedulerLock.Unlock()
 	}
 }
 
