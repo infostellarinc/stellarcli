@@ -1,0 +1,33 @@
+name: golangci-lint
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "README.MD"
+      - ".github/workflows/*"
+  pull_request:
+    paths-ignore:
+      - "README.MD"
+      - ".github/workflows/*"
+
+permissions:
+  contents: read
+
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repo
+      - uses: actions/checkout@v4
+      # Install Go
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      # Lint the project
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.55
+          args: --timeout=3m

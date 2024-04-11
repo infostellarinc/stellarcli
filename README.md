@@ -62,3 +62,11 @@ We stay on the 2nd latest Go version to ensure security patches and to avoid any
 # Go users
 $ go build
 ```
+
+### Linting
+
+We utilize [golangci-lint](https://golangci-lint.run/welcome/install/) for linting/static analysis rules.
+
+## Releasing
+
+Releasing uses [Go Releaser](https://goreleaser.com/)

@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/infostellarinc/stellarcli/cmd/app"
+	"github.com/infostellarinc/stellarcli/app"
 	"github.com/infostellarinc/stellarcli/pkg/auth"
 	log "github.com/infostellarinc/stellarcli/pkg/logger"
 )
@@ -52,7 +52,7 @@ func Dial() (*grpc.ClientConn, error) {
 		apiUrl,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithPerRPCCredentials(creds),
-		grpc.WithUserAgent(fmt.Sprintf("stellarcli/%s", app.ReleaseVersion)),
+		grpc.WithUserAgent(fmt.Sprintf("stellarcli/%s/%s", app.Version, app.Commit)),
 		// Set receive size to a somewhat safe 9MiB.
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(9437000)))
 }
