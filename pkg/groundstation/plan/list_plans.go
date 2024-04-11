@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/infostellarinc/go-stellarstation/api/v1/groundstation"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
@@ -27,26 +27,26 @@ import (
 )
 
 var listPlansVerboseTemplate = []printer.TemplateItem{
-	{"PLAN_ID", "planId"},
-	{"AOS_TIME", "aos"},
-	{"LOS_TIME", "los"},
-	{"SATELLITE_ID", "satelliteInfo.id"},
-	{"SATELLITE_ORG_NAME", "satelliteInfo.orgName"},
-	{"DL_FREQ_HZ", "downlinkFreq"},
-	{"UL_FREQ_HZ", "uplinkFreq"},
-	{"TLE_LINE__1", "tleLine1"},
-	{"TLE_LINE__2", "tleLine2"},
-	{"UNIT_PRICE", "unitPrice"},
+	{Label: "PLAN_ID", Path: "planId"},
+	{Label: "AOS_TIME", Path: "aos"},
+	{Label: "LOS_TIME", Path: "los"},
+	{Label: "SATELLITE_ID", Path: "satelliteInfo.id"},
+	{Label: "SATELLITE_ORG_NAME", Path: "satelliteInfo.orgName"},
+	{Label: "DL_FREQ_HZ", Path: "downlinkFreq"},
+	{Label: "UL_FREQ_HZ", Path: "uplinkFreq"},
+	{Label: "TLE_LINE__1", Path: "tleLine1"},
+	{Label: "TLE_LINE__2", Path: "tleLine2"},
+	{Label: "UNIT_PRICE", Path: "unitPrice"},
 }
 
 var listPlansTemplate = []printer.TemplateItem{
-	{"PLAN_ID", "planId"},
-	{"AOS_TIME", "aos"},
-	{"LOS_TIME", "los"},
-	{"SATELLITE_ORG_NAME", "satelliteInfo.orgName"},
-	{"DL_FREQ_HZ", "downlinkFreq"},
-	{"UL_FREQ_HZ", "uplinkFreq"},
-	{"UNIT_PRICE", "unitPrice"},
+	{Label: "PLAN_ID", Path: "planId"},
+	{Label: "AOS_TIME", Path: "aos"},
+	{Label: "LOS_TIME", Path: "los"},
+	{Label: "SATELLITE_ORG_NAME", Path: "satelliteInfo.orgName"},
+	{Label: "DL_FREQ_HZ", Path: "downlinkFreq"},
+	{Label: "UL_FREQ_HZ", Path: "uplinkFreq"},
+	{Label: "UNIT_PRICE", Path: "unitPrice"},
 }
 
 type ListOptions struct {
@@ -65,15 +65,9 @@ func ListPlans(o *ListOptions) {
 	}
 	defer conn.Close()
 
-	aosAfterTimestamp, err := ptypes.TimestampProto(o.AOSAfter.UTC())
-	if err != nil {
-		log.Fatal(err)
-	}
+	aosAfterTimestamp := timestamppb.New(o.AOSAfter.UTC())
 
-	aosBeforeTimestamp, err := ptypes.TimestampProto(o.AOSBefore.UTC())
-	if err != nil {
-		log.Fatal(err)
-	}
+	aosBeforeTimestamp := timestamppb.New(o.AOSBefore.UTC())
 
 	client := groundstation.NewGroundStationServiceClient(conn)
 	request := &groundstation.ListPlansRequest{
@@ -84,7 +78,8 @@ func ListPlans(o *ListOptions) {
 
 	result, err := client.ListPlans(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("could not list plans: %v\n", err)
+		return
 	}
 
 	targetTemplate := listPlansTemplate
@@ -97,15 +92,8 @@ func ListPlans(o *ListOptions) {
 
 	var results []map[string]interface{}
 	for _, plan := range result.Plan {
-		aos, err := ptypes.Timestamp(plan.AosTime)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		los, err := ptypes.Timestamp(plan.LosTime)
-		if err != nil {
-			log.Fatal(err)
-		}
+		aos := plan.GetAosTime().AsTime()
+		los := plan.GetLosTime().AsTime()
 
 		var downlinkFreq, uplinkFreq uint64
 		if plan.DownlinkRadioDevice != nil {

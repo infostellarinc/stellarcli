@@ -54,12 +54,15 @@ var _ = Describe("PriorityQueue", func() {
 		})
 
 		It("should succeed", func() {
-			rand.Seed(time.Now().UnixNano())
+			//nolint:gosec
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 			n := 50
 			for i := 0; i < n; i++ {
-				nsec := rand.Intn(1000)
-				seconds := rand.Intn(30)
+				//nolint:gosec
+				nsec := r.Intn(1000)
+				//nolint:gosec
+				seconds := r.Intn(30)
 				item := &Item{t: time.Date(2019, 10, 01, 3, 16, seconds, nsec, time.UTC)}
 				pq.Push(item)
 			}

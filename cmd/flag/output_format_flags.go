@@ -56,12 +56,12 @@ func (f *OutputFormatFlags) Validate() error {
 }
 
 // Return a Printer corresponding to the output format.
-func (f *OutputFormatFlags) ToPrinter(FlagsOn ...bool) printer.Printer {
+func (f *OutputFormatFlags) ToPrinter(flagsOn ...bool) printer.Printer {
 	format := util.ToLower(f.Format)
 
 	switch format {
 	case "wide":
-		isVerbose := len(FlagsOn) > 0 && FlagsOn[0]
+		isVerbose := len(flagsOn) > 0 && flagsOn[0]
 		if isVerbose {
 			log.Println("wide format not supported when verbose flag is on")
 			o := printer.NewJSONPrinterOptions(defaultOutput)

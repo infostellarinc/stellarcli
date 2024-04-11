@@ -16,7 +16,6 @@ package tle
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
@@ -49,7 +48,8 @@ func SetTLESource(o *SetTLESourceOptions) {
 	} else if sourceOption == "norad" {
 		source = stellarstation.SetTleSourceRequest_NORAD
 	} else {
-		log.Fatal("Invalid source provided")
+		log.Printf("invalid source provided: '%v'\n", sourceOption)
+		return
 	}
 
 	request := &stellarstation.SetTleSourceRequest{
@@ -59,10 +59,11 @@ func SetTLESource(o *SetTLESourceOptions) {
 
 	_, err = client.SetTleSource(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("problem setting tle source: %v\n", err)
+		return
 	}
 
 	defer o.Printer.Flush()
-	message := fmt.Sprintf("Successfully changed TLE source.")
+	message := "Successfully changed TLE source."
 	o.Printer.Write([]interface{}{message})
 }

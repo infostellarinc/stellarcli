@@ -15,7 +15,7 @@
 package auth
 
 import (
-	"io/ioutil"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 
 	"github.com/infostellarinc/stellarcli/pkg/config"
-	log "github.com/infostellarinc/stellarcli/pkg/logger"
 )
 
 // NewDefaultCredentials initializes gRPC credentials using Stellar Default Credentials.
@@ -32,18 +31,18 @@ func NewDefaultCredentials() (credentials.PerRPCCredentials, error) {
 }
 
 // StoreCredentialsFile stores the API key at the given path to a well known location.
-func StoreCredentialsFile(path string) {
-	content, err := ioutil.ReadFile(path)
+func StoreCredentialsFile(path string) error {
+	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatalf("could not read credentials file.\n%v", err)
+		return fmt.Errorf("could not read credentials file: %w", err)
 	}
 
-	config.EnsureConfigDir()
+	_ = config.EnsureConfigDir()
 
-	err = ioutil.WriteFile(wellKnownFile(), content, 0600)
-	if err != nil {
-		log.Fatalf("could not write to config directory.\n%v", err)
+	if err := os.WriteFile(wellKnownFile(), content, 0600); err != nil {
+		return fmt.Errorf("could not write to config directory: %w", err)
 	}
+	return nil
 }
 
 func findDefaultCredentials() string {

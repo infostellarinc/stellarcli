@@ -47,7 +47,8 @@ func GetTLE(o *GetTLEOptions) {
 
 	result, err := client.GetTle(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("problem getting TLE: %v\n", err)
+		return
 	}
 
 	defer o.Printer.Flush()

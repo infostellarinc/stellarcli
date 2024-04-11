@@ -86,17 +86,12 @@ func initialModel(
 	helpModel.Styles.ShortSeparator = helpStyleSeparator
 
 	helpModel.ShowAll = true
-	// helpModel.Width = tableWidth
 
 	inboundCrc32cTable := crc32.MakeTable(crc32.Castagnoli)
 	inboundCrc32cHash := crc32.New(inboundCrc32cTable)
 
-	// outboundCrc32cTable := crc32.MakeTable(crc32.Castagnoli)
-	// outboundCrc32cHash := crc32.New(outboundCrc32cTable)
-
 	stateMux.Lock()
 	streamState.inboundCrc32c = inboundCrc32cHash
-	// streamState.outboundCrc32c = outboundCrc32cHash
 	stateMux.Unlock()
 
 	go startStream(ctx, plan, client)
@@ -152,7 +147,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.dataStateView.receivedEndTelemetryMessage = streamState.receivedEndTelemetryMessage
 
 	m.dataStateView.inboundCrc32cStr = fmt.Sprintf("%v", streamState.inboundCrc32c.Sum32())
-	// m.dataStateView.outboundCrc32cStr = fmt.Sprintf("%v", streamState.outboundCrc32c.Sum32())
 
 	if streamState.err != nil {
 		m.debugLog = prependLine(m.debugLog, fmt.Sprintf("stream err: %v", streamState.err.Error()))
@@ -196,9 +190,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// re-emit same tick duration
 		return m, startScreenInterval(msg.duration)
 	case tea.KeyMsg:
-
-		switch {
-		case key.Matches(msg, m.helpKeyMap.Quit):
+		if key.Matches(msg, m.helpKeyMap.Quit) {
 			stateMux.Lock()
 			if STREAM_CLIENT != nil {
 				_ = STREAM_CLIENT.CloseSend()
@@ -338,9 +330,6 @@ func (m model) View() string {
 
 		builder.WriteString("%50s: %v\n")
 		parameters = append(parameters, boldStyle.Render("Inbound Data CRC32C"), m.dataStateView.inboundCrc32cStr)
-
-		// builder.WriteString("%30s: %v\n")
-		// parameters = append(parameters, boldStyle.Render("Outbound Data CRC32C"), m.dataStateView.outboundCrc32cStr)
 	}
 
 	if m.debugMode {

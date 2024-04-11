@@ -24,8 +24,8 @@ import (
 )
 
 // EnsureConfigDir ensures the configuration directory exists, creating it and all parents as required.
-func EnsureConfigDir() {
-	os.MkdirAll(GetConfigDir(), 0755)
+func EnsureConfigDir() error {
+	return os.MkdirAll(GetConfigDir(), 0755)
 }
 
 // GetConfigDir returns the directory containing configuration files for stellar.

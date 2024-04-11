@@ -44,7 +44,8 @@ func DeleteUW(o *DeleteUWOptions) {
 
 	_, err = client.DeleteUnavailabilityWindow(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("problem deleting unavailability window: %v\n", err)
+		return
 	}
 
 	defer o.Printer.Flush()

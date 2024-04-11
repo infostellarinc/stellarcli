@@ -44,7 +44,8 @@ func ReservePass(o *ReservePassOptions) {
 
 	result, err := client.ReservePass(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("problem reserving pass: %v\n", err)
+		return
 	}
 
 	defer o.Printer.Flush()

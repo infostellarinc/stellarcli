@@ -19,12 +19,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
-
 	"github.com/infostellarinc/go-stellarstation/api/v1/groundstation"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 	log "github.com/infostellarinc/stellarcli/pkg/logger"
 	"github.com/infostellarinc/stellarcli/util/printer"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AddUWOptions struct {
@@ -42,15 +41,8 @@ func AddUW(o *AddUWOptions) {
 	}
 	defer conn.Close()
 
-	startTimeTimestamp, err := ptypes.TimestampProto(o.StartTime.UTC())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	endTimeTimestamp, err := ptypes.TimestampProto(o.EndTime.UTC())
-	if err != nil {
-		log.Fatal(err)
-	}
+	startTimeTimestamp := timestamppb.New(o.StartTime.UTC())
+	endTimeTimestamp := timestamppb.New(o.EndTime.UTC())
 
 	client := groundstation.NewGroundStationServiceClient(conn)
 	request := &groundstation.AddUnavailabilityWindowRequest{
@@ -61,7 +53,8 @@ func AddUW(o *AddUWOptions) {
 
 	result, err := client.AddUnavailabilityWindow(context.Background(), request)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("problem adding unavailability window: %v\n", err)
+		return
 	}
 
 	defer o.Printer.Flush()

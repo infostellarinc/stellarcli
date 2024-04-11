@@ -117,14 +117,15 @@ func (p *udpProxy) recvLoop() {
 			p.recvConn.Close()
 			return
 		default:
-			p.recvConn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+			_ = p.recvConn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 			n, _, err := p.recvConn.ReadFrom(recvBuf)
 			if err != nil {
 				if !err.(net.Error).Timeout() {
-					log.Fatalf("error receiving on UDP port: %v\n", err)
+					log.Printf("error receiving on UDP port: %v\n", err)
+					return
 				}
 			} else {
-				p.stream.Send(recvBuf[:n])
+				_ = p.stream.Send(recvBuf[:n])
 			}
 		}
 	}
@@ -135,7 +136,7 @@ func (p *udpProxy) sendLoop() {
 	for {
 		select {
 		case payload := <-p.streamChan:
-			p.sendConn.Write(payload)
+			_, _ = p.sendConn.Write(payload)
 		case <-p.sendCloseChan:
 			p.sendConn.Close()
 			return

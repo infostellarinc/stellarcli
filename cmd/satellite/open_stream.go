@@ -90,7 +90,7 @@ func NewOpenStreamCommand() *cobra.Command {
 				log.Println("No proxy or output file set. Streamed data will be discarded")
 			}
 
-			c := make(chan os.Signal)
+			c := make(chan os.Signal, 1)
 			signal.Notify(c, os.Interrupt)
 			defer close(c)
 

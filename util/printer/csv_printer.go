@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"reflect"
 	"time"
 )
 
@@ -83,21 +82,23 @@ func (p *CSVPrinter) Write(r []interface{}) {
 
 	for i, v := range r {
 		if i > 0 {
-			_, err = p.writer.Write([]byte(p.Options.Separator))
+			_, err = p.writer.WriteString(p.Options.Separator)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
-		t := reflect.TypeOf(v).String()
-		switch t {
-		case "string":
+		switch val := v.(type) {
+		case string:
 			if p.Options.QuoteString {
-				_, err = p.writer.Write([]byte(fmt.Sprintf("%q", v.(string))))
+				_, err = fmt.Fprintf(p.writer, "%q", val)
 			} else {
-				_, err = p.writer.Write([]byte(fmt.Sprintf("%v", v.(string))))
+				_, err = fmt.Fprintf(p.writer, "%v", val)
 			}
-		case "time.Time":
-			_, err = p.writer.Write([]byte(v.(time.Time).Format(p.Options.DateFormat)))
+		case time.Time:
+			_, err = p.writer.WriteString(val.Format(p.Options.DateFormat))
 		default:
-			_, err = p.writer.Write([]byte(fmt.Sprintf("%v", v)))
+			_, err = fmt.Fprintf(p.writer, "%v", val)
 		}
 
 		if err != nil {
@@ -105,7 +106,7 @@ func (p *CSVPrinter) Write(r []interface{}) {
 		}
 	}
 
-	_, err = p.writer.Write([]byte(p.Options.CRLF))
+	_, err = p.writer.WriteString(p.Options.CRLF)
 
 	if err != nil {
 		log.Fatal(err)

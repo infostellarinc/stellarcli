@@ -15,6 +15,8 @@
 package auth
 
 import (
+	log "github.com/infostellarinc/stellarcli/pkg/logger"
+
 	"github.com/spf13/cobra"
 
 	"github.com/infostellarinc/stellarcli/cmd/util"
@@ -36,7 +38,9 @@ func NewActivateApiKeyCommand() *cobra.Command {
 		Long:  activateApiKeyLong,
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			auth.StoreCredentialsFile(args[0])
+			if err := auth.StoreCredentialsFile(args[0]); err != nil {
+				log.Printf("problem storing configuration: %v\n", err)
+			}
 		},
 	}
 

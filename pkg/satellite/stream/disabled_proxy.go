@@ -46,6 +46,7 @@ func (p *noProxy) Start(o *SatelliteStreamOptions) (func(), error) {
 }
 
 func (p *noProxy) serve() {
+	//nolint:gosimple
 	for {
 		select {
 		case <-p.streamChan:
