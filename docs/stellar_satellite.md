@@ -2,10 +2,6 @@
 
 Commands for working with satellites
 
-### Synopsis
-
-Commands for working with satellites
-
 ### Options
 
 ```

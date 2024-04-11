@@ -2,10 +2,6 @@
 
 Commands for working with ground stations.
 
-### Synopsis
-
-Commands for working with ground stations.
-
 ### Options
 
 ```
