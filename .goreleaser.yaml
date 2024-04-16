@@ -42,6 +42,14 @@ archives:
       - goos: windows
         format: zip
 
+release:
+  # Repo in which the release will be created.
+  # Default is extracted from the origin remote URL or empty if its private hosted.
+  github:
+    owner: infostellarinc
+    name: stellarcli
+  draft: true
+
 changelog:
   sort: asc
   filters:
