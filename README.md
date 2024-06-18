@@ -49,7 +49,7 @@ You will need an API key to fully use the CLI. This walkthrough assumes you have
 
 Generate a private API key, download it, and place it somewhere safe.
 
-<span style="color:red">IMPORTANT: Do not share this private key with anyone.</span>
+__IMPORTANT__: Do not share this private key with anyone.
 
 Execute `stellar auth activate-api-key path/to/key.json`.
 
@@ -63,7 +63,7 @@ Now that you have provided a new TLE, wait several seconds, and check that the T
 
 Execute `stellar sat get-tle [STELLARSTATION SATELLITE ID HERE]`. The returned TLE should match the one you provided above.
 
-<span style="color:yellow">WARNING: `add-tle` sets the TLE updater in StellarStation to "Manual" mode - meaning that StellarStation will not automatically update the TLE. To set up automatic TLE updates please contact an Infostellar support engineer.</span>
+__WARNING__: `add-tle` sets the TLE updater in StellarStation to "Manual" mode - meaning that StellarStation will not automatically update the TLE. To set up automatic TLE updates please contact an Infostellar support engineer.
 
 ### Getting a list of Available Passes
 
@@ -71,7 +71,7 @@ We can see a list of available passes now that the TLE is set.
 
 Execute `stellar sat list-passes [STELLARSTATION SATELLITE ID HERE] --verbose`.
 
-This will print out a huge list of passes.
+This will print out a huge list of passes (and corresponding reservation tokens for later use).
 
 ### Reserving a Plan
 
