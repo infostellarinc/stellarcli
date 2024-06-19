@@ -14,8 +14,6 @@ Precompiled binaries of the app can be found on the [releases page](https://gith
 
 Remember to extract the `stellar` executable, place the executable in a good location, give your user the correct file permissions to execute `stellar`, and optionally make sure that location is on the system path.
 
-Once installed properly, for more help execute `stellar -h`.
-
 ### Preparing your Environment
 
 Decide which service endpoint you want to use. As of writing this, there are two service endpoints available to users:
