@@ -59,7 +59,7 @@ Now that you have completed authentication, we can update the TLE. This walkthro
 
 Execute `stellar satellite add-tle [STELLARSTATION SATELLITE ID HERE] "[TLE LINE 1]" "[TLE LINE 2]"`. Try the [Space Station](https://celestrak.org/NORAD/elements/gp.php?CATNR=25544) as a good temporary TLE for now.
 
-Now that you have provided a new TLE, wait several seconds, and check that the TLE propagated to StellarStation.
+Check that the TLE propagated to StellarStation.
 
 Execute `stellar satellite get-tle [STELLARSTATION SATELLITE ID HERE]`. The returned TLE should match the one you provided above.
 
