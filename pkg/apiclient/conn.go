@@ -53,6 +53,7 @@ func Dial() (*grpc.ClientConn, error) {
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithPerRPCCredentials(creds),
 		grpc.WithUserAgent(fmt.Sprintf("stellarcli/%s/%s", app.Version, app.Commit)),
-		// Set receive size to a somewhat safe 9MiB.
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(9437000)))
+		// By default, GRPC sets the max message size to 4MB, but StellarStation can support up to 10MB.
+		// If GRPC message would be received which exceeds this GRPC limit, a RESOURCE_EXHAUSTED error will be returned.
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(10*1024*1024)))
 }
