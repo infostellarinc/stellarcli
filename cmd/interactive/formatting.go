@@ -37,17 +37,17 @@ var helpStyleSeparator = lipgloss.NewStyle().Foreground(
 )
 
 var baseText = lipgloss.NewStyle().TabWidth(2).Foreground(lipgloss.Color("252"))
-var baseTextDim = baseText.Copy().Foreground(lipgloss.Color("248"))
-var boldStyle = baseText.Copy().Bold(true)
+var baseTextDim = baseText.Foreground(lipgloss.Color("248"))
+var boldStyle = baseText.Bold(true)
 
-var headerStyle = boldStyle.Copy().Foreground(lipgloss.Color("252"))
-var tableContent = baseText.Copy().Foreground(lipgloss.Color("252"))
-var tableContentEven = baseText.Copy().Foreground(lipgloss.Color("248"))
+var headerStyle = boldStyle.Foreground(lipgloss.Color("252"))
+var tableContent = baseText.Foreground(lipgloss.Color("252"))
+var tableContentEven = baseText.Foreground(lipgloss.Color("248"))
 
-var greenStyle = baseText.Copy().Foreground(lipgloss.Color("#75FBAB"))
-var greenStyleDim = greenStyle.Copy().Foreground(lipgloss.Color("#59B980"))
-var redStyle = baseText.Copy().Foreground(lipgloss.Color("#FF7698"))
-var redStyleDim = redStyle.Copy().Foreground(lipgloss.Color("#BA5F75"))
+var greenStyle = baseText.Foreground(lipgloss.Color("#75FBAB"))
+var greenStyleDim = greenStyle.Foreground(lipgloss.Color("#59B980"))
+var redStyle = baseText.Foreground(lipgloss.Color("#FF7698"))
+var redStyleDim = redStyle.Foreground(lipgloss.Color("#BA5F75"))
 
 func textDimmer(isDim bool, text string) string {
 	if isDim {

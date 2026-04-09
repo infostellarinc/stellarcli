@@ -43,11 +43,12 @@ func SetTLESource(o *SetTLESourceOptions) {
 	var sourceOption = strings.ToLower(o.Source)
 	var source stellarstation.SetTleSourceRequest_Source
 
-	if sourceOption == "manual" {
+	switch sourceOption {
+	case "manual":
 		source = stellarstation.SetTleSourceRequest_MANUAL
-	} else if sourceOption == "norad" {
+	case "norad":
 		source = stellarstation.SetTleSourceRequest_NORAD
-	} else {
+	default:
 		log.Printf("invalid source provided: '%v'\n", sourceOption)
 		return
 	}

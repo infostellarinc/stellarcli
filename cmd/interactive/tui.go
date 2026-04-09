@@ -214,7 +214,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.commandInput.Blur()
 				m.commandInput.Reset()
 				m.debugLog = prependLine(m.debugLog, "command input canceled")
-				break
 			case "enter":
 				payload := strings.TrimSpace(m.commandInput.Value())
 				m.commandInputOpen = false
@@ -227,12 +226,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				subCmds = append(subCmds, func() tea.Msg {
 					return sendCommand(payload, m)
 				})
-				break
 			default:
 				var inputCmd tea.Cmd
 				m.commandInput, inputCmd = m.commandInput.Update(msg)
 				subCmds = append(subCmds, inputCmd)
-				break
 			}
 			break
 		}

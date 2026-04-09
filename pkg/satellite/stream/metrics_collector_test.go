@@ -80,7 +80,7 @@ func TestDelay(t *testing.T) {
 func ToTimestamp(t *time.Time) *timestamp.Timestamp {
 	return &timestamp.Timestamp{
 		Seconds: t.Unix(),
-		Nanos:   int32(t.Nanosecond()),
+		Nanos:   timestampNanos(t.Nanosecond()),
 	}
 }
 

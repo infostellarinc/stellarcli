@@ -17,10 +17,8 @@ package config
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 
 	log "github.com/infostellarinc/stellarcli/pkg/logger"
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 // EnsureConfigDir ensures the configuration directory exists, creating it and all parents as required.
@@ -30,14 +28,10 @@ func EnsureConfigDir() error {
 
 // GetConfigDir returns the directory containing configuration files for stellar.
 func GetConfigDir() string {
-	if runtime.GOOS == "windows" {
-		return filepath.Join(os.Getenv("APPDATA"), "stellar")
-	}
-
-	home, err := homedir.Dir()
+	configDir, err := os.UserConfigDir()
 	if err != nil {
-		log.Fatalf("could not find home directory.\n%v", err)
+		log.Fatalf("could not find config directory.\n%v", err)
 	}
 
-	return filepath.Join(home, ".config", "stellar")
+	return filepath.Join(configDir, "stellar")
 }
