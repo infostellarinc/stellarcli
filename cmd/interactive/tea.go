@@ -3,8 +3,8 @@ package interactive
 import (
 	"time"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 )
 
 type errMsg struct{ err error }
@@ -30,6 +30,8 @@ type helpKeyMap struct {
 	IdlePatternEnable  key.Binding
 	IdlePatternDisable key.Binding
 
+	CommandInput key.Binding
+
 	Quit key.Binding
 }
 
@@ -52,6 +54,7 @@ func (h helpKeyMap) Update(m model) helpKeyMap {
 	h.ModulationDisable.SetEnabled(enableCommands)
 	h.IdlePatternEnable.SetEnabled(enableCommands)
 	h.IdlePatternDisable.SetEnabled(enableCommands)
+	h.CommandInput.SetEnabled(enableCommands)
 
 	return h
 }
@@ -90,6 +93,10 @@ func defaultKeyMap() helpKeyMap {
 			key.WithKeys("8"),
 			key.WithHelp("8", "disable idle pattern"),
 		),
+		CommandInput: key.NewBinding(
+			key.WithKeys("c"),
+			key.WithHelp("c", "send command"),
+		),
 		Quit: key.NewBinding(
 			key.WithKeys("ctrl+c"),
 			key.WithHelp("ctrl+c", "quit"),
@@ -107,6 +114,7 @@ func (h helpKeyMap) ShortHelp() []key.Binding {
 		h.ModulationDisable,
 		h.IdlePatternEnable,
 		h.IdlePatternDisable,
+		h.CommandInput,
 		h.Quit,
 	}
 }
@@ -122,6 +130,7 @@ func (h helpKeyMap) FullHelp() [][]key.Binding {
 			h.ModulationDisable,
 			h.IdlePatternEnable,
 			h.IdlePatternDisable,
+			h.CommandInput,
 		},
 		{h.Quit},
 	}

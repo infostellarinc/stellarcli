@@ -5,8 +5,9 @@ import (
 	"log"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
+	"github.com/infostellarinc/stellarcli/cmd/flag"
 	"github.com/infostellarinc/stellarcli/cmd/util"
 	"github.com/infostellarinc/stellarcli/pkg/apiclient"
 	"github.com/spf13/cobra"
@@ -21,6 +22,8 @@ var (
 
 // Create reserve-pass command.
 func NewInteractiveCommand() *cobra.Command {
+	writeFileFlag := flag.NewWriteFileFlag()
+
 	command := &cobra.Command{
 		Use:   interactiveUse,
 		Short: interactiveShort,
@@ -30,10 +33,13 @@ func NewInteractiveCommand() *cobra.Command {
 				return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
 			}
 
-			return nil
+			return writeFileFlag.Validate()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			debugMode, _ := cmd.PersistentFlags().GetBool("debug")
+			if writeFileFlag.TelemetryFile != nil {
+				defer writeFileFlag.TelemetryFile.Close()
+			}
 
 			log.Printf("Fetching up coming and recent plans for Satellite '%s'.", args[0])
 			conn, err := apiclient.Dial()
@@ -86,6 +92,7 @@ func NewInteractiveCommand() *cobra.Command {
 				client,
 				selectedPlan,
 				debugMode,
+				writeFileFlag.TelemetryFile,
 			)
 			p := tea.NewProgram(model)
 			if _, err := p.Run(); err != nil {
@@ -94,6 +101,8 @@ func NewInteractiveCommand() *cobra.Command {
 			return nil
 		},
 	}
+
+	writeFileFlag.AddFlags(command)
 
 	return command
 

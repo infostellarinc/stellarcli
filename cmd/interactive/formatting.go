@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 // simple prepend
@@ -24,21 +24,19 @@ func prependLine(currentLines string, msg ...string) string {
 	return builder.String()
 }
 
-var helpStyleDescription = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-	Light: "#B2B2B2",
-	Dark:  "#cacaca",
-})
-var helpStyleKey = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-	Light: "#909090",
-	Dark:  "#a2a2a2",
-})
-var helpStyleSeparator = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-	Light: "#DDDADA",
-	Dark:  "#3C3C3C",
-})
+var lightDark = lipgloss.LightDark(lipgloss.HasDarkBackground(os.Stdin, os.Stdout))
 
-var baseRenderer = lipgloss.NewRenderer(os.Stdout)
-var baseText = baseRenderer.NewStyle().TabWidth(2).Foreground(lipgloss.Color("252"))
+var helpStyleDescription = lipgloss.NewStyle().Foreground(
+	lightDark(lipgloss.Color("#B2B2B2"), lipgloss.Color("#cacaca")),
+)
+var helpStyleKey = lipgloss.NewStyle().Foreground(
+	lightDark(lipgloss.Color("#909090"), lipgloss.Color("#a2a2a2")),
+)
+var helpStyleSeparator = lipgloss.NewStyle().Foreground(
+	lightDark(lipgloss.Color("#DDDADA"), lipgloss.Color("#3C3C3C")),
+)
+
+var baseText = lipgloss.NewStyle().TabWidth(2).Foreground(lipgloss.Color("252"))
 var baseTextDim = baseText.Copy().Foreground(lipgloss.Color("248"))
 var boldStyle = baseText.Copy().Bold(true)
 

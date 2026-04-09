@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -39,6 +40,32 @@ func configurationChange(
 	}
 
 	return configurationChangeSent(fmt.Sprintf("configuration change: %v", debugMsg))
+}
+
+func sendCommand(payload string, m model) tea.Msg {
+	stateMux.Lock()
+	defer stateMux.Unlock()
+
+	if STREAM_CLIENT == nil {
+		return errMsg{err: errors.New("stream client not active")}
+	}
+
+	err := STREAM_CLIENT.Send(&stellarstation.SatelliteStreamRequest{
+		SatelliteId:     m.plan.GetSatelliteId(),
+		PlanId:          m.plan.GetId(),
+		GroundStationId: m.plan.GetGroundStationId(),
+		StreamId:        m.streamID,
+		Request: &stellarstation.SatelliteStreamRequest_SendSatelliteCommandsRequest{
+			SendSatelliteCommandsRequest: &stellarstation.SendSatelliteCommandsRequest{
+				Command: [][]byte{[]byte(payload)},
+			},
+		},
+	})
+	if err != nil {
+		return errMsg{fmt.Errorf("could not send command: %w", err)}
+	}
+
+	return commandSent(fmt.Sprintf("command sent: %q", payload))
 }
 
 func idlePattern(enable bool, m model) tea.Msg {
@@ -109,7 +136,7 @@ func sweep(enable bool, m model) tea.Msg {
 	}, m)
 }
 
-func streamHandler(plan *stellarstation.Plan) error {
+func streamHandler(plan *stellarstation.Plan, telemetryFile *os.File) error {
 	for {
 		msg, err := STREAM_CLIENT.Recv()
 		if err != nil {
@@ -134,6 +161,12 @@ func streamHandler(plan *stellarstation.Plan) error {
 			for _, telemetry := range telemetryResponse.Telemetry {
 				if telemetry == nil {
 					break
+				}
+				if telemetryFile != nil {
+					if _, writeErr := telemetryFile.Write(telemetry.Data); writeErr != nil {
+						stateMux.Unlock()
+						return writeErr
+					}
 				}
 				_, _ = streamState.inboundCrc32c.Write(telemetry.Data)
 				streamState.totalPayloadBytes += uint64(len(telemetry.Data))
@@ -181,7 +214,7 @@ func streamHandler(plan *stellarstation.Plan) error {
 	}
 }
 
-func startStream(ctx context.Context, plan *stellarstation.Plan, client stellarstation.StellarStationServiceClient) {
+func startStream(ctx context.Context, plan *stellarstation.Plan, client stellarstation.StellarStationServiceClient, telemetryFile *os.File) {
 	defer func() {
 		stateMux.Lock()
 		streamState.closed = true
@@ -223,7 +256,7 @@ func startStream(ctx context.Context, plan *stellarstation.Plan, client stellars
 
 		stateMux.Unlock()
 
-		if err := streamHandler(plan); err != nil {
+		if err := streamHandler(plan, telemetryFile); err != nil {
 			if errors.Is(err, context.Canceled) {
 				return
 			} else if errors.Is(err, io.EOF) {
