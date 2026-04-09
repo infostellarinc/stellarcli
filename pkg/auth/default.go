@@ -25,6 +25,8 @@ import (
 	"github.com/infostellarinc/stellarcli/pkg/config"
 )
 
+const wellKnownCredentialsFilename = "stellarstation_credentials.json"
+
 // NewDefaultCredentials initializes gRPC credentials using Stellar Default Credentials.
 func NewDefaultCredentials() (credentials.PerRPCCredentials, error) {
 	return oauth.NewJWTAccessFromFile(findDefaultCredentials())
@@ -37,9 +39,17 @@ func StoreCredentialsFile(path string) error {
 		return fmt.Errorf("could not read credentials file: %w", err)
 	}
 
-	_ = config.EnsureConfigDir()
+	if err := config.EnsureConfigDir(); err != nil {
+		return fmt.Errorf("could not create config directory: %w", err)
+	}
 
-	if err := os.WriteFile(wellKnownFile(), content, 0600); err != nil {
+	root, err := os.OpenRoot(config.GetConfigDir())
+	if err != nil {
+		return fmt.Errorf("could not open config directory: %w", err)
+	}
+	defer root.Close()
+
+	if err := root.WriteFile(wellKnownCredentialsFilename, content, 0600); err != nil {
 		return fmt.Errorf("could not write to config directory: %w", err)
 	}
 	return nil
@@ -57,6 +67,5 @@ func findDefaultCredentials() string {
 }
 
 func wellKnownFile() string {
-	const f = "stellarstation_credentials.json"
-	return filepath.Join(config.GetConfigDir(), f)
+	return filepath.Join(config.GetConfigDir(), wellKnownCredentialsFilename)
 }

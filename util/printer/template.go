@@ -29,7 +29,7 @@ type TemplateItem struct {
 func Flatten(obj map[string]interface{}, t []TemplateItem) []interface{} {
 	flattened := make([]interface{}, len(t))
 	for i, item := range t {
-		err, v := GetValue(obj, item.Path)
+		v, err := GetValue(obj, item.Path)
 		if err != nil {
 			flattened[i] = ""
 		} else {
@@ -50,20 +50,20 @@ func GetLabels(items []TemplateItem) []interface{} {
 
 // Get a value from the map by a path separated by dots.
 // Example: gsInfo.gsLat
-func GetValue(m map[string]interface{}, path string) (error, interface{}) {
+func GetValue(m map[string]interface{}, path string) (interface{}, error) {
 	keys := strings.Split(path, ".")
 
 	var current = m
 	for _, key := range keys {
 		v, ok := current[key]
 		if !ok {
-			return fmt.Errorf("cannot find a value for the path, %s", path), nil
+			return nil, fmt.Errorf("cannot find a value for the path, %s", path)
 		}
 
 		current, ok = v.(map[string]interface{})
 		if !ok {
-			return nil, v
+			return v, nil
 		}
 	}
-	return fmt.Errorf("cannot find a value for the path, %s", path), nil
+	return nil, fmt.Errorf("cannot find a value for the path, %s", path)
 }

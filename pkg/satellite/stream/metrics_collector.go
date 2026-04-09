@@ -154,11 +154,18 @@ func toTime(ts *timestamp.Timestamp) *time.Time {
 	return &t
 }
 
+func timestampNanos(nanos int) int32 {
+	if nanos < 0 || nanos > 999999999 {
+		panic(fmt.Sprintf("nanoseconds out of range: %d", nanos))
+	}
+	return int32(nanos)
+}
+
 func timestampNow() *timestamp.Timestamp {
 	now := time.Now().UTC()
 	return &timestamp.Timestamp{
 		Seconds: now.Unix(),
-		Nanos:   int32(now.Nanosecond()),
+		Nanos:   timestampNanos(now.Nanosecond()),
 	}
 }
 

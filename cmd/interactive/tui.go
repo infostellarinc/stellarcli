@@ -4,15 +4,17 @@ import (
 	"context"
 	"fmt"
 	"hash/crc32"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/table"
 	stellarstation "github.com/infostellarinc/go-stellarstation/api/v1"
 )
 
@@ -39,6 +41,9 @@ type model struct {
 	help       help.Model
 	helpKeyMap helpKeyMap
 
+	commandInputOpen bool
+	commandInput     textinput.Model
+
 	debugMode     bool
 	debugLog      string
 	teaUpdates    uint64
@@ -52,6 +57,7 @@ func initialModel(
 	client stellarstation.StellarStationServiceClient,
 	plan *stellarstation.Plan,
 	debugMode bool,
+	telemetryFile *os.File,
 ) model {
 	txStateTable := table.New().Width(tableWidth).Headers(
 		"Sweep", "Modulation", "Carrier", "Idle Pattern",
@@ -69,7 +75,10 @@ func initialModel(
 		"Est. Max Elevation", "Elevation", "Azimuth",
 	).Border(lipgloss.RoundedBorder()).StyleFunc(tableStyleFunc)
 
-	debugvp := viewport.New(tableWidth, 7)
+	debugvp := viewport.New(
+		viewport.WithWidth(tableWidth),
+		viewport.WithHeight(7),
+	)
 	debugvp.Style = viewportStyleBlue
 
 	opStart := plan.GetAosTime().AsTime()
@@ -87,6 +96,12 @@ func initialModel(
 
 	helpModel.ShowAll = true
 
+	commandInput := textinput.New()
+	commandInput.Prompt = "Command> "
+	commandInput.Placeholder = "type command and press enter"
+	commandInput.CharLimit = 0
+	commandInput.SetWidth(tableWidth - len(commandInput.Prompt))
+
 	inboundCrc32cTable := crc32.MakeTable(crc32.Castagnoli)
 	inboundCrc32cHash := crc32.New(inboundCrc32cTable)
 
@@ -94,7 +109,7 @@ func initialModel(
 	streamState.inboundCrc32c = inboundCrc32cHash
 	stateMux.Unlock()
 
-	go startStream(ctx, plan, client)
+	go startStream(ctx, plan, client, telemetryFile)
 
 	return model{
 		operationStart: opStart,
@@ -111,6 +126,8 @@ func initialModel(
 
 		help:       helpModel,
 		helpKeyMap: defaultKeyMap(),
+
+		commandInput: commandInput,
 
 		debugMode:     debugMode,
 		debugViewport: debugvp,
@@ -189,7 +206,34 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case screenIntervalTick:
 		// re-emit same tick duration
 		return m, startScreenInterval(msg.duration)
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
+		if m.commandInputOpen {
+			switch msg.String() {
+			case "esc":
+				m.commandInputOpen = false
+				m.commandInput.Blur()
+				m.commandInput.Reset()
+				m.debugLog = prependLine(m.debugLog, "command input canceled")
+			case "enter":
+				payload := strings.TrimSpace(m.commandInput.Value())
+				m.commandInputOpen = false
+				m.commandInput.Blur()
+				m.commandInput.Reset()
+				if payload == "" {
+					m.debugLog = prependLine(m.debugLog, "empty command skipped")
+					break
+				}
+				subCmds = append(subCmds, func() tea.Msg {
+					return sendCommand(payload, m)
+				})
+			default:
+				var inputCmd tea.Cmd
+				m.commandInput, inputCmd = m.commandInput.Update(msg)
+				subCmds = append(subCmds, inputCmd)
+			}
+			break
+		}
+
 		if key.Matches(msg, m.helpKeyMap.Quit) {
 			stateMux.Lock()
 			if STREAM_CLIENT != nil {
@@ -210,6 +254,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch {
+		case key.Matches(msg, m.helpKeyMap.CommandInput):
+			m.commandInputOpen = true
+			m.commandInput.Reset()
+			m.commandInput.SetWidth(tableWidth - len(m.commandInput.Prompt))
+			subCmds = append(subCmds, m.commandInput.Focus())
 		case key.Matches(msg, m.helpKeyMap.SweepEnable):
 			cmd := func() tea.Msg {
 				return sweep(true, m)
@@ -266,7 +315,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(subCmds...)
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
 	m.txStateTable.Data(
 		table.NewStringData(m.txStateView.toStringColumns()),
 	)
@@ -322,6 +371,11 @@ func (m model) View() string {
 		boldStyle.Render("Configuration Changes Sent"),
 		m.dataStateView.configurationChangeSentCount,
 	)
+	builder.WriteString("%50s: %v\n")
+	parameters = append(parameters,
+		boldStyle.Render("Commands Sent"),
+		m.dataStateView.commandSentCount,
+	)
 
 	if m.streamClosed ||
 		m.dataStateView.receivedEndTelemetryMessage ||
@@ -339,14 +393,21 @@ func (m model) View() string {
 		parameters = append(parameters, boldStyle.Render("Debug"), m.debugViewport.View())
 	}
 
+	if m.commandInputOpen {
+		builder.WriteString("\n%s:\n%v\n")
+		parameters = append(parameters, boldStyle.Render("Send Command"), m.commandInput.View())
+		builder.WriteString("%s\n")
+		parameters = append(parameters, baseTextDim.Render("Press enter to send, esc to cancel."))
+	}
+
 	builder.WriteString("\n")
 	builder.WriteString(m.help.View(m.helpKeyMap))
 
 	builder.WriteString("\n")
 
-	return fmt.Sprintf(
+	return tea.NewView(fmt.Sprintf(
 		builder.String(),
 		parameters...,
-	)
+	))
 
 }
